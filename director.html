@@ -1,0 +1,225 @@
+<html>
+	<head>
+		<script src="peer.min.js"></script>		
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+
+		<script type="text/javascript">
+
+			var connectedcalls = [];
+
+			var socket = io.connect();
+			
+			socket.on('connect', function() {
+				socket.emit('type','director');
+				if (peer_id != null) {
+					socket.emit('peerid',peer_id);
+				}	
+			});
+
+			socket.on('chatmessage', function (data) {
+				document.getElementById("messages").innerHTML = "<div onclick='sendModeratedMessage(this.innerHTML);'>" + data + "</div><br />\n" + document.getElementById("messages").innerHTML;
+			});
+
+			socket.on('peerid', function(data) {
+				console.log("socket on peerid");
+				makeCall(data);
+			});
+			
+			function sendmessage(message) {
+				socket.emit('chatmessage', message);
+			};
+			
+			function sendModeratedMessage(message) {
+				socket.emit('moderatedchatmessage', message);
+			}
+			
+			function sendPeerIdConnect(peerid) {
+				socket.emit('peerid_connect', peerid);			
+			}
+			
+			function sendPeerIdDisconnect(peerid) {
+				socket.emit('peerid_disconnect', peerid);
+			}
+
+			/* Get User Media */
+			var my_stream = null;
+
+			var peer_id = null;
+
+			var peer;
+
+			window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+			if (navigator.getUserMedia) {
+				navigator.getUserMedia({video: false, audio: true}, function(stream) {
+					my_stream = stream;
+					var audioElement = document.getElementById('myaudio');
+					audioElement.src = window.URL.createObjectURL(stream) || stream;
+					audioElement.play();
+
+					// We'll use a global variable to hold on to our id from PeerJS
+
+					peer = new Peer({host: 'liveweb.itp.io', port: 9000, path: '/'});
+
+					// Get an ID from the PeerJS server		
+					peer.on('open', function(id) {
+					  peer_id = id;
+						if (socket != null) {						  
+						  socket.emit('peerid', peer_id);
+						}					
+					});		
+
+					peer.on('call', function(incoming_call) {
+						console.log("peer.on call");
+						incoming_call.answer(my_stream); 
+						incoming_call.on('stream', function(remoteStream) {  
+							var ovideoDiv = document.createElement('div');
+							ovideoDiv.setAttribute("id","div_" + incoming_call.peer);
+							document.getElementById('mobilevideos').appendChild(ovideoDiv);
+						
+							var ovideoElement = document.createElement('video');
+							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+							ovideoElement.setAttribute("autoplay", "true");	
+							ovideoElement.setAttribute("id", incoming_call.peer);	
+							ovideoElement.setAttribute("width", "320");
+							ovideoElement.setAttribute("height", "180");	
+							ovideoElement.play();
+							ovideoElement.addEventListener('click', function() {
+								var connected = false;
+								for (var i = 0; i < connectedcalls.length; i++) 
+								{
+									if (connectedcalls[i] == incoming_call.peer) {
+										connected = true;
+									}
+								}
+								
+								if (!connected) {
+									connectedcalls.push(incoming_call.peer);
+									sendPeerIdConnect(incoming_call.peer); 
+								} else {
+									sendPeerIdDisconnect(incoming_call.peer);
+
+									for (var i = 0; i < connectedcalls.length; i++) {
+										if (connectedcalls[i] == incoming_call.peer) {
+											connectedcalls.splice(i,1);
+										}
+									}																		
+								}
+							});
+
+							ovideoDiv.appendChild(ovideoElement);							
+						});
+		
+						incoming_call.on('close', function() {
+							console.log("incoming_call.on close");  // This is happening when it shouldn't
+							// When peer refreshes.. 
+							/*
+							var ovideoElement = document.getElementById(incoming_call.peer);
+							ovideoElement.parentElement.removeChild(ovideoElement);
+							
+							var ovideoDiv = document.getElementById("div_" + incoming_call.peer);
+							if (ovideoDiv != null) {
+								ovideoDiv.parentElement.removeChild(ovideoDiv);
+							}
+							*/							
+						});
+				
+						incoming_call.on('error', function(err) {
+							console.log(err);
+							var ovideoElement = document.getElementById(incoming_call.peer);
+							if (ovideoElement != null) {
+								ovideoElement.parentElement.removeChild(ovideoElement);
+							}
+
+							var ovideoDiv = document.getElementById("div_" + incoming_call.peer);
+							if (ovideoDiv != null) {
+								ovideoDiv.parentElement.removeChild(ovideoDiv);
+							}							
+						});						
+										
+					});
+
+				}, function(err) {
+					console.log('Failed to get local stream' ,err);
+				});
+			}	
+
+			function makeCall(peeridtocall) {
+				console.log("makeCall: " + peeridtocall);
+				var call = peer.call(peeridtocall,my_stream);
+				call.on('stream', function(remoteStream) {  
+					console.log("makeCall: call.on stream");
+					var ovideoDiv = document.createElement('div');
+					//ovideoDiv.setAttribute("id","div_" + call.peer);
+					document.getElementById('mobilevideos').appendChild(ovideoDiv);
+				
+					var ovideoElement = document.createElement('video');
+					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+					ovideoElement.setAttribute("autoplay", "true");	
+					//ovideoElement.setAttribute("id", call.peer);
+					ovideoElement.setAttribute("width", "320");
+					ovideoElement.setAttribute("height", "180");					
+					ovideoElement.play();
+					ovideoDiv.appendChild(ovideoElement);
+
+					ovideoElement.addEventListener('click', function() {
+						var connected = false;
+						for (var i = 0; i < connectedcalls.length; i++) 
+						{
+							if (connectedcalls[i] == call.peer) {
+								connected = true;
+							}
+						}
+					
+						if (!connected) {
+							connectedcalls.push(call.peer);
+							sendPeerIdConnect(call.peer); 
+						} else {
+							sendPeerIdDisconnect(call.peer);
+
+							for (var i = 0; i < connectedcalls.length; i++) {
+								if (connectedcalls[i] == call.peer) {
+									connectedcalls.splice(i,1);
+								}
+							}																		
+						}
+					});					
+					
+				});		
+		
+				call.on('close', function() {
+					console.log("call.on close");
+					var ovideoElement = document.getElementById(call.peer);
+					ovideoElement.parentElement.removeChild(ovideoElement);
+					
+					var ovideoDiv = document.getElementById("div_" + call.peer);
+					if (ovideoDiv != null) {
+						ovideoDiv.parentElement.removeChild(ovideoDiv);
+					}
+				});
+				
+				call.on('error', function(err) {
+					console.log(err);
+					var ovideoElement = document.getElementById(call.peer);
+					if (ovideoElement != null) {
+						ovideoElement.parentElement.removeChild(ovideoElement);
+					}
+					
+					var ovideoDiv = document.getElementById("div_" + call.peer);
+					if (ovideoDiv != null) {
+						ovideoDiv.parentElement.removeChild(ovideoDiv);
+					}
+				});						
+			}
+
+		</script>
+	</head>
+	<body>
+		<div id="mobilevideos"></div>
+		<input type="text" id="thetext">
+		<input type="button" value="send" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">
+		<div id="messages"></div>
+		<audio id="myaudio" width="320" height="240" muted autoplay controls></audio>
+	</body>
+
+</html>

@@ -1,0 +1,131 @@
+<html>
+	<head>
+		<script src="peer.min.js"></script>		
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+
+		<script type="text/javascript">
+
+			var calls = [];
+
+			var socket = io.connect();
+			
+			socket.on('connect', function() {
+				socket.emit('type','remote');
+				if (peer_id != null) {
+					socket.emit('peerid',peer_id);
+				}	
+			});
+
+			socket.on('chatmessage', function (data) {
+				document.getElementById("messages").innerHTML = "<div>" + data + "</div><br />\n" + document.getElementById("messages").innerHTML;
+			});
+
+			socket.on('peerid_connect', function(data) {
+				console.log("socket on peerid_connect");
+				makeCall(data);
+			});
+
+			socket.on('peerid_disconnect', function(data) {
+				console.log("socket on peerid_disconnect");
+				hangupCall(data);
+			});
+						
+			function sendmessage(message) {
+				socket.emit('chatmessage', message);
+			};
+
+			var my_stream = null;// = new webkitMediaStream();
+	
+			var peer_id = null;
+			
+			var peer = null;
+
+			window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+			if (navigator.getUserMedia) {
+				navigator.getUserMedia({video: true, audio: true}, function(stream) {
+					my_stream = stream;
+					var audioElement = document.getElementById('myaudio');
+					audioElement.src = window.URL.createObjectURL(stream) || stream;
+					audioElement.play();
+					peer = new Peer({host: 'liveweb.itp.io', port: 9000, path: '/'});
+					// Get an ID from the PeerJS server		
+					peer.on('open', function(id) {
+						peer_id = id;
+						console.log(peer_id);
+					});			
+					peer.on('call', function(incoming_call) {
+						console.log("peer.on call");
+						incoming_call.answer(my_stream); 
+						incoming_call.on('stream', function(remoteStream) {  
+							var ovideoElement = document.createElement('video');
+							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+							ovideoElement.setAttribute("id", incoming_call.peer);
+							ovideoElement.setAttribute("autoplay", "true");		
+							ovideoElement.setAttribute("width", "320");
+							ovideoElement.setAttribute("height", "180");							
+							ovideoElement.play();
+							document.body.appendChild(ovideoElement);
+						});
+						incoming_call.on('error', function(err) {
+							console.log(err);
+						});
+						calls.push(incoming_call);
+					});					
+				}, function(err) {
+					console.log('Failed to get local stream' ,err);
+				});
+			}
+					
+			function makeCall(peeridtocall) {
+				console.log("makeCall: " + peeridtocall);
+				var call = peer.call(peeridtocall,my_stream);
+				call.on('stream', function(remoteStream) {  
+					console.log("got their stream, appending to page");
+												
+					var ovideoElement = document.createElement('video');
+					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+					ovideoElement.setAttribute("id", call.peer);
+					ovideoElement.setAttribute("width", "320");
+					ovideoElement.setAttribute("height", "180");
+					ovideoElement.setAttribute("controls", "controls");
+					ovideoElement.setAttribute("autoplay", "true");		
+					ovideoElement.play();
+					document.body.appendChild(ovideoElement);
+				});	
+				
+				call.on('close', function() {
+					console.log("call close");
+				});
+				
+				call.on('error', function(err) {
+					console.log(err);
+				});
+				calls.push(call);							
+			}
+			
+			function hangupCall(peeridtoend) {
+				console.log("hangupCall: " + peeridtoend);
+				var ovideoElement = document.getElementById(peeridtoend);
+				if (ovideoElement != null) {
+					ovideoElement.parentElement.removeChild(ovideoElement);
+				}
+				for (var i = 0; i < calls.length; i++) {
+					if (calls[i].peer == peeridtoend) {
+						calls[i].close();
+						calls.splice(i,1);
+					}
+				}				
+			}
+
+		</script>
+	</head>
+	<body>
+		<input type="text" id="thetext">
+		<input type="button" value="send" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">
+		<div id="messages"></div>
+		<audio id="myaudio" width="320" height="240" muted autoplay controls></audio>
+		
+	</body>
+
+</html>

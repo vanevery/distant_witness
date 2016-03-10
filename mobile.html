@@ -1,0 +1,150 @@
+<html>
+	<head>
+		<script src="peer.min.js"></script>		
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+
+		<script type="text/javascript">
+
+			var socket = io.connect();
+			
+			socket.on('connect', function() {
+				socket.emit('type','mobile');
+				if (peer_id != null) {
+					socket.emit('peerid',peer_id);
+				}				
+			});
+
+			socket.on('chatmessage', function (data) {
+				document.getElementById("messages").innerHTML = data + "<br />\n" + document.getElementById("messages").innerHTML;
+			});
+
+			socket.on('peerid', function(data) {
+				makeCall(data);
+			});
+			
+			function sendPanic() {
+				socket.emit('panic',"");
+			}
+			
+			function sendMessage(message) {
+				socket.emit('chatmessage', message);
+			};
+
+			/* Get User Media */
+			var my_stream = null;
+
+			var peer_id = null;
+
+			var peer;
+
+			window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+			if (navigator.getUserMedia) {
+				navigator.getUserMedia({video: {width: 640, height: 360}, audio: true}, function(stream) {
+					my_stream = stream;
+					var videoElement = document.getElementById('myvideo');
+					videoElement.src = window.URL.createObjectURL(stream) || stream;
+					videoElement.play();
+
+					peer = new Peer({host: 'liveweb.itp.io', port: 9000, path: '/'});
+
+					peer.on('open', function(id) {
+						peer_id = id;
+						console.log(peer_id);
+						
+						if (socket != null) {						  
+						  socket.emit('peerid', peer_id);
+						}
+					});		
+
+					peer.on('call', function(incoming_call) {
+						console.log("Got a call!");
+						incoming_call.answer(my_stream); 						
+						incoming_call.on('stream', function(remoteStream) { 
+							console.log("Got a call's stream") 
+							var oaudioElement = document.createElement('audio');
+							oaudioElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+							oaudioElement.setAttribute("autoplay", "true");	
+							oaudioElement.setAttribute("id", incoming_call.peer);
+							//audioElement.setAttribute("controls", "controls");	
+							oaudioElement.play();
+							document.body.appendChild(oaudioElement);
+						});
+						
+						incoming_call.on('close', function() {
+							var oaudioElement = document.getElementById(incoming_call.peer);
+							oaudioElement.parentElement.removeChild(oaudioElement);
+						});
+						
+						incoming_call.on('error', function(err) {
+							console.log(err);
+							var oaudioElement = document.getElementById(incoming_call.peer);
+							if (oaudioElement != null) {
+								oaudioElement.parentElement.removeChild(oaudioElement);
+							}
+						});
+						
+					});
+
+				}, function(err) {
+					console.log('Failed to get local stream' ,err);
+				});
+			}	
+
+			function makeCall(peeridtocall) {
+				var call = peer.call(peeridtocall,my_stream);
+				call.on('stream', function(remoteStream) {  
+					var oaudioElement = document.createElement('audio');
+					oaudioElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+					oaudioElement.setAttribute("autoplay", "true");	
+					oaudioElement.setAttribute("id", call.peer);	
+					oaudioElement.play();
+					document.body.appendChild(oaudioElement);					
+				});	
+						
+				call.on('close', function() {
+					var oaudioElement = document.getElementById(call.peer);
+					oaudioElement.parentElement.removeChild(oaudioElement);
+				});
+				
+				call.on('error', function(err) {
+					var oaudioElement = document.getElementById(call.peer);
+					if (oaudioElement != null) {
+						oaudioElement.parentElement.removeChild(oaudioElement);
+					}
+				});						
+						
+			}
+
+			if (navigator.geolocation) {
+
+				navigator.geolocation.watchPosition(successCallback, errorCallback, {});
+
+				function successCallback(currentPosition) {
+				
+					//var lat = currentPosition.coords.latitude;
+					//var lng = currentPosition.coords.longitude;
+					
+					socket.emit('location', {lat: currentPosition.coords.latitude, lng: currentPosition.coords.longitude});
+ 				}
+
+				function errorCallback(e) {
+					console.log(e);
+				}
+
+			} else {
+				console.log("Geolocation Not Allowed");
+			}
+
+		</script>
+	</head>
+	<body>
+		<video id="myvideo" width="320" height="180" muted autoplay></video>
+		<div id="messages"></div>
+		<div id="panel">
+			<input type="button" value="OK" onclick="sendMessage('Ok');">
+			<input type="button" value="HELP" onclick="sendPanic();">
+		</div>
+	</body>
+
+</html>
