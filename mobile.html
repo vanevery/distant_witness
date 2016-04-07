@@ -66,25 +66,25 @@
 						incoming_call.answer(my_stream); 						
 						incoming_call.on('stream', function(remoteStream) { 
 							console.log("Got a call's stream") 
-							var oaudioElement = document.createElement('audio');
-							oaudioElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-							oaudioElement.setAttribute("autoplay", "true");	
-							oaudioElement.setAttribute("id", incoming_call.peer);
-							//audioElement.setAttribute("controls", "controls");	
-							oaudioElement.play();
-							document.body.appendChild(oaudioElement);
+							var ovideoElement = document.createElement('video');
+							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+							ovideoElement.setAttribute("autoplay", "true");	
+							ovideoElement.setAttribute("id", incoming_call.peer);
+							ovideoElement.setAttribute("controls", "controls");	
+							ovideoElement.play();
+							document.body.appendChild(ovideoElement);
 						});
 						
 						incoming_call.on('close', function() {
-							var oaudioElement = document.getElementById(incoming_call.peer);
-							oaudioElement.parentElement.removeChild(oaudioElement);
+							var ovideoElement = document.getElementById(incoming_call.peer);
+							ovideoElement.parentElement.removeChild(ovideoElement);
 						});
 						
 						incoming_call.on('error', function(err) {
 							console.log(err);
-							var oaudioElement = document.getElementById(incoming_call.peer);
-							if (oaudioElement != null) {
-								oaudioElement.parentElement.removeChild(oaudioElement);
+							var ovideoElement = document.getElementById(incoming_call.peer);
+							if (ovideoElement != null) {
+								ovideoElement.parentElement.removeChild(ovideoElement);
 							}
 						});
 						
@@ -98,23 +98,23 @@
 			function makeCall(peeridtocall) {
 				var call = peer.call(peeridtocall,my_stream);
 				call.on('stream', function(remoteStream) {  
-					var oaudioElement = document.createElement('audio');
-					oaudioElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-					oaudioElement.setAttribute("autoplay", "true");	
-					oaudioElement.setAttribute("id", call.peer);	
-					oaudioElement.play();
-					document.body.appendChild(oaudioElement);					
+					var ovideoElement = document.createElement('video');
+					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+					ovideoElement.setAttribute("autoplay", "true");	
+					ovideoElement.setAttribute("id", call.peer);	
+					ovideoElement.play();
+					document.body.appendChild(ovideoElement);					
 				});	
 						
 				call.on('close', function() {
-					var oaudioElement = document.getElementById(call.peer);
-					oaudioElement.parentElement.removeChild(oaudioElement);
+					var ovideoElement = document.getElementById(call.peer);
+					ovideoElement.parentElement.removeChild(ovideoElement);
 				});
 				
 				call.on('error', function(err) {
-					var oaudioElement = document.getElementById(call.peer);
-					if (oaudioElement != null) {
-						oaudioElement.parentElement.removeChild(oaudioElement);
+					var ovideoElement = document.getElementById(call.peer);
+					if (ovideoElement != null) {
+						ovideoElement.parentElement.removeChild(ovideoElement);
 					}
 				});						
 						

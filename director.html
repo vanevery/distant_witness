@@ -1,6 +1,8 @@
 <html>
 	<head>
-		<script src="peer.min.js"></script>		
+		<script src="peer.min.js"></script>	
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAGE3faVAYtFxrVWtxKWXklXksPVaXXw6E&callback=initMap"
+    async defer></script>	
 		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
 
 		<script type="text/javascript">
@@ -27,7 +29,7 @@
 			
 			socket.on('location', function(data) {
 				console.log("socket on location");
-				
+				addMoveMarker(socket.id, data.lat, data.lng);
 			});
 			
 			function sendmessage(message) {
@@ -56,13 +58,11 @@
 			window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 			if (navigator.getUserMedia) {
-				navigator.getUserMedia({video: false, audio: true}, function(stream) {
+				navigator.getUserMedia({video: true, audio: true}, function(stream) {
 					my_stream = stream;
-					var audioElement = document.getElementById('myaudio');
-					audioElement.src = window.URL.createObjectURL(stream) || stream;
-					audioElement.play();
-
-					// We'll use a global variable to hold on to our id from PeerJS
+					var videoElement = document.getElementById('myvideo');
+					videoElement.src = window.URL.createObjectURL(stream) || stream;
+					videoElement.play();
 
 					peer = new Peer({host: 'liveweb.itp.io', port: 9000, path: '/'});
 
@@ -88,6 +88,7 @@
 							ovideoElement.setAttribute("id", incoming_call.peer);	
 							ovideoElement.setAttribute("width", "320");
 							ovideoElement.setAttribute("height", "180");	
+							ovideoElement.setAttribute("controls", "controls");								
 							ovideoElement.play();
 							ovideoElement.addEventListener('click', function() {
 								var connected = false;
@@ -163,7 +164,8 @@
 					ovideoElement.setAttribute("autoplay", "true");	
 					//ovideoElement.setAttribute("id", call.peer);
 					ovideoElement.setAttribute("width", "320");
-					ovideoElement.setAttribute("height", "180");					
+					ovideoElement.setAttribute("height", "180");
+					ovideoElement.setAttribute("controls", "controls");	
 					ovideoElement.play();
 					ovideoDiv.appendChild(ovideoElement);
 
@@ -224,10 +226,10 @@
 			  var myLatLng = {lat: 40, lng: -74};
 
 			  // Create a map object and specify the DOM element for display.
-			  map = new google.maps.Map(document.getElementById('map'), {
+			  map = new google.maps.Map(document.getElementById('mapdiv'), {
 				center: myLatLng,
 				scrollwheel: false,
-				zoom: 4
+				zoom: 8
 			  });
 
 			}
@@ -260,16 +262,18 @@
 				map.setCenter({lat: lat, lng: lng});
 			}
 			
-			window.addEventListener('load', initMap);
+			//window.addEventListener('load', initMap);
 		</script>
 	</head>
 	<body>
 		<div id="mobilevideos"></div>
+		<video id="myvideo" width="320" height="240" muted autoplay controls></video>
+		<div id="mapoutter" style="width: 100%; height: 100%;">
+			<div id="mapdiv" style="width: 500px; height: 500px;"></div>
+		</div>
+		<div id="messages"></div>
 		<input type="text" id="thetext">
 		<input type="button" value="send" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">
-		<div id="messages"></div>
-		<div id="map"></div>
-		<audio id="myaudio" width="320" height="240" muted autoplay controls></audio>
 	</body>
 
 </html>
