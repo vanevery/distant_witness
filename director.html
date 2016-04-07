@@ -25,6 +25,11 @@
 				makeCall(data);
 			});
 			
+			socket.on('location', function(data) {
+				console.log("socket on location");
+				
+			});
+			
 			function sendmessage(message) {
 				socket.emit('chatmessage', message);
 			};
@@ -212,6 +217,50 @@
 				});						
 			}
 
+
+			var map = null;
+			
+			function initMap() {
+			  var myLatLng = {lat: 40, lng: -74};
+
+			  // Create a map object and specify the DOM element for display.
+			  map = new google.maps.Map(document.getElementById('map'), {
+				center: myLatLng,
+				scrollwheel: false,
+				zoom: 4
+			  });
+
+			}
+			
+			var markers = [];
+			// {id, marker, lat, lng}
+			
+			function addMoveMarker(id, lat, lng) {
+				var found = false;
+				for (var i = 0; i < markers.length; i++) {
+					if (markers[i].id === id) {
+						// Update marker
+						markers[i].marker.setPosition({lat: lat, lng: lng});
+						markers[i].lat = lat;
+						markers[i].lng = lng;
+						found = true;
+						break;
+					}
+				}		
+				if (!found) {
+					// Create a marker and set its position.
+				  	var marker = new google.maps.Marker({
+						map: map,
+						position: {lat: lat, lng: lng},
+						title: 'Mobile'
+				  	});	
+				  	markers.push({id, marker, lat, lng});
+				}	
+				
+				map.setCenter({lat: lat, lng: lng});
+			}
+			
+			window.addEventListener('load', initMap);
 		</script>
 	</head>
 	<body>
@@ -219,6 +268,7 @@
 		<input type="text" id="thetext">
 		<input type="button" value="send" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">
 		<div id="messages"></div>
+		<div id="map"></div>
 		<audio id="myaudio" width="320" height="240" muted autoplay controls></audio>
 	</body>
 
