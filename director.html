@@ -1,5 +1,68 @@
 <html>
 	<head>
+		<link rel="stylesheet" type="text/css" href="smart-grid.css"> 
+		<style>
+			.myvideodiv {
+				margin: 10px 10px 10px 10px;
+				width: 320px;
+				height: 240px;
+				background-color: rgb(64,64,64);
+			}
+			
+			.remotevideodiv {
+				background-color: rgb(128,64,64);
+				margin: 10px 10px 10px 10px;
+				width: 320px;
+				height: 240px;			
+			}
+			
+			.remotemessage {
+				padding: 5px 5px 5px 5px;
+				margin: 5px 5px 5px 5px;
+				font-family: sans-serif;
+				background-color: rgb(128,64,64);
+				font-size: 20px;
+				color: rgb(0,0,0);
+				/*text-shadow: 1px 1	px rgb(255,255,255);*/			
+			}
+			
+			.mymessage {
+				padding: 5px 5px 5px 5px;
+				margin: 5px 5px 5px 5px;
+				font-family: sans-serif;
+				background-color: rgb(128,128,128);
+				font-size: 20px;
+				color: rgb(0,0,0);
+				/*text-shadow: 1px 1px rgb(255,255,255);*/
+			}
+			
+			#title {
+				font-family: sans-serif;
+				font-size: 30px;
+			}
+			
+			#thetext {
+				font-family: sans-serif;
+				font-size: 20px;
+				width: 200px;
+				height: 30px;	
+				border: 2px solid black; 
+			}
+			
+			#sendbutton {
+				background-color: white;
+			    color: black;
+			    border: 2px solid black; 
+			    width: 50px;
+			    height: 30px;
+			}
+			
+			#messages {
+				height: 300px;
+				overflow: scroll;
+			}
+		</style>
+		
 		<script src="peer.min.js"></script>	
 		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAGE3faVAYtFxrVWtxKWXklXksPVaXXw6E&callback=initMap"
     async defer></script>	
@@ -18,8 +81,22 @@
 				}	
 			});
 
+// 			socket.on('chatmessage', function (data) {
+// 				document.getElementById("messages").innerHTML = "<div onclick='sendModeratedMessage(this.innerHTML);'>" + data + "</div><br />\n" + document.getElementById("messages").innerHTML;
+// 			});
+
 			socket.on('chatmessage', function (data) {
-				document.getElementById("messages").innerHTML = "<div onclick='sendModeratedMessage(this.innerHTML);'>" + data + "</div><br />\n" + document.getElementById("messages").innerHTML;
+				var newmessage = document.createElement("div");
+				newmessage.className = "message";
+				newmessage.innerHTML = data;
+				
+				var messages = document.getElementById("messages");
+				if (messages.children.length > 0) {
+					messages.insertBefore(newmessage, messages.children[0]);
+				} else {
+					messages.appendChild(newmessage);
+				}
+				//document.getElementById("messages").innerHTML = data + "<br />\n" + document.getElementById("messages").innerHTML;
 			});
 
 			socket.on('peerid', function(data) {
@@ -80,6 +157,7 @@
 						incoming_call.on('stream', function(remoteStream) {  
 							var ovideoDiv = document.createElement('div');
 							ovideoDiv.setAttribute("id","div_" + incoming_call.peer);
+							ovideoDiv.className = "columns six remotevideodiv";
 							document.getElementById('mobilevideos').appendChild(ovideoDiv);
 						
 							var ovideoElement = document.createElement('video');
@@ -87,7 +165,7 @@
 							ovideoElement.setAttribute("autoplay", "true");	
 							ovideoElement.setAttribute("id", incoming_call.peer);	
 							ovideoElement.setAttribute("width", "320");
-							ovideoElement.setAttribute("height", "180");	
+							ovideoElement.setAttribute("height", "240");	
 							ovideoElement.setAttribute("controls", "controls");								
 							ovideoElement.play();
 							ovideoElement.addEventListener('click', function() {
@@ -156,15 +234,16 @@
 				call.on('stream', function(remoteStream) {  
 					console.log("makeCall: call.on stream");
 					var ovideoDiv = document.createElement('div');
-					//ovideoDiv.setAttribute("id","div_" + call.peer);
+					ovideoDiv.setAttribute("id","div_" + call.peer);
+					ovideoDiv.className = "columns six remotevideodiv";
 					document.getElementById('mobilevideos').appendChild(ovideoDiv);
 				
 					var ovideoElement = document.createElement('video');
 					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
 					ovideoElement.setAttribute("autoplay", "true");	
-					//ovideoElement.setAttribute("id", call.peer);
+					ovideoElement.setAttribute("id", call.peer);
 					ovideoElement.setAttribute("width", "320");
-					ovideoElement.setAttribute("height", "180");
+					ovideoElement.setAttribute("height", "240");
 					ovideoElement.setAttribute("controls", "controls");	
 					ovideoElement.play();
 					ovideoDiv.appendChild(ovideoElement);
@@ -229,7 +308,7 @@
 			  map = new google.maps.Map(document.getElementById('mapdiv'), {
 				center: myLatLng,
 				scrollwheel: false,
-				zoom: 8
+				zoom: 12
 			  });
 
 			}
@@ -266,14 +345,32 @@
 		</script>
 	</head>
 	<body>
-		<div id="mobilevideos"></div>
-		<video id="myvideo" width="320" height="240" muted autoplay controls></video>
-		<div id="mapoutter" style="width: 100%; height: 100%;">
-			<div id="mapdiv" style="width: 500px; height: 500px;"></div>
+		<div class="container">
+			<div id="title">Distant Witness</div>
+		</div>	
+		<div class="container">
+			<div id="mobilevideos" class="row">
+				<div id="myvideo_div" class="columns six myvideodiv">
+					<video id="myvideo" width="320" height="240" muted autoplay></video>
+				</div>
+			</div>
+			<div class="row">
+				<div id="messages" class="columns one-third">
+					<div class="remotemessage">Last message from a distant witness </div>
+					<div class="mymessage">Long message to a distant witness which should have a line break or something of the sort depending on the screen size </div>
+					<div class="remotemessage">First message from a distant witness </div>
+				</div>
+				<div id="mapoutter" class="columns two-thirds">
+					<div id="mapdiv" style="width: 620px; height: 300px;"></div>
+				</div>
+			</div>    
+			<div class="row">
+				<div class="columns one-third">
+					<input type="text" id="thetext">
+					<button id="sendbutton" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">SEND</button>
+				</div>
+			</div>
 		</div>
-		<div id="messages"></div>
-		<input type="text" id="thetext">
-		<input type="button" value="send" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">
 	</body>
 
 </html>

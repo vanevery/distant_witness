@@ -1,10 +1,48 @@
 <html>
 	<head>
+		<link rel="stylesheet" type="text/css" href="smart-grid.css"> 
+		<style>
+			.video_div {
+				margin: 10px 10px 10px 10px;
+				width: 320px;
+				height: 240px;
+			}
+			
+			.message {
+				margin: 10px 10px 10px 10px;
+				padding: 5px 5px 5px 5px;
+				font-family: sans-serif;
+				background-color: rgb(128,128,128);
+				font-size: 30px;
+				color: rgb(0,0,0);
+				/*text-shadow: 1px 1	px rgb(255,255,255);*/
+			}
+			
+			#okbutton {
+				background-color: white;
+			    color: black;
+			    border: 2px solid black; 
+			    width: 100px;
+			    height: 100px;
+			    margin: 10px 10px 10px 10px;
+			}
+
+			#helpbutton {
+				background-color: red;
+			    color: black;
+			    border: 2px solid black; 
+			    width: 100px;
+			    height: 100px;
+				margin: 10px 10px 10px 10px;
+			}
+			
+			
+		</style>
+		
 		<script src="peer.min.js"></script>		
 		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
 
 		<script type="text/javascript">
-
 			var socket = io.connect();
 			
 			socket.on('connect', function() {
@@ -15,7 +53,17 @@
 			});
 
 			socket.on('chatmessage', function (data) {
-				document.getElementById("messages").innerHTML = data + "<br />\n" + document.getElementById("messages").innerHTML;
+				var newmessage = document.createElement("div");
+				newmessage.className = "message";
+				newmessage.innerHTML = data;
+				
+				var messages = document.getElementById("messages");
+				if (messages.children.length > 0) {
+					messages.insertBefore(newmessage, messages.children[0]);
+				} else {
+					messages.appendChild(newmessage);
+				}
+				//document.getElementById("messages").innerHTML = data + "<br />\n" + document.getElementById("messages").innerHTML;
 			});
 
 			socket.on('peerid', function(data) {
@@ -37,10 +85,10 @@
 
 			var peer;
 
-			window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
-			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-			if (navigator.getUserMedia) {
-				navigator.getUserMedia({video: {width: 640, height: 360}, audio: true}, function(stream) {
+			var mediaConstraints = { audio: true, video: { width: 320, height: 240, facingMode: "environment" }};
+
+			if (navigator.mediaDevices.getUserMedia) {
+				navigator.mediaDevices.getUserMedia(mediaConstraints).then(function(stream) {
 					my_stream = stream;
 					var videoElement = document.getElementById('myvideo');
 					videoElement.src = window.URL.createObjectURL(stream) || stream;
@@ -65,32 +113,42 @@
 						console.log("Got a call!");
 						incoming_call.answer(my_stream); 						
 						incoming_call.on('stream', function(remoteStream) { 
-							console.log("Got a call's stream") 
-							var ovideoElement = document.createElement('video');
+							var ovideoElement = document.getElementById('othervideo');
 							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-							ovideoElement.setAttribute("autoplay", "true");	
-							ovideoElement.setAttribute("id", incoming_call.peer);
-							ovideoElement.setAttribute("controls", "controls");	
 							ovideoElement.play();
-							document.body.appendChild(ovideoElement);
+
+							//var ovideoElement = document.createElement('video');
+							//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+							//ovideoElement.setAttribute("autoplay", "true");	
+							//ovideoElement.setAttribute("id", incoming_call.peer);
+							//ovideoElement.setAttribute("controls", "controls");	
+							//ovideoElement.play();
+							////document.body.appendChild(ovideoElement);
+							//document.getElementById('othervideo').appendChild(ovideoElement);
 						});
 						
 						incoming_call.on('close', function() {
-							var ovideoElement = document.getElementById(incoming_call.peer);
-							ovideoElement.parentElement.removeChild(ovideoElement);
+							var ovideoElement = document.getElementById('othervideo');
+							ovideoElement.src = null;
+						
+							//var ovideoElement = document.getElementById(incoming_call.peer);
+							//ovideoElement.parentElement.removeChild(ovideoElement);
 						});
 						
 						incoming_call.on('error', function(err) {
 							console.log(err);
-							var ovideoElement = document.getElementById(incoming_call.peer);
-							if (ovideoElement != null) {
-								ovideoElement.parentElement.removeChild(ovideoElement);
-							}
+							var ovideoElement = document.getElementById('othervideo');
+							ovideoElement.src = null;	
+							
+							//var ovideoElement = document.getElementById(incoming_call.peer);
+							//if (ovideoElement != null) {
+							//	ovideoElement.parentElement.removeChild(ovideoElement);
+							//}
 						});
 						
 					});
 
-				}, function(err) {
+				}).catch(function(err) {
 					console.log('Failed to get local stream' ,err);
 				});
 			}	
@@ -98,32 +156,40 @@
 			function makeCall(peeridtocall) {
 				var call = peer.call(peeridtocall,my_stream);
 				call.on('stream', function(remoteStream) {  
-					var ovideoElement = document.createElement('video');
+					var ovideoElement = document.getElementById('othervideo');
 					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-					ovideoElement.setAttribute("autoplay", "true");	
-					ovideoElement.setAttribute("id", call.peer);	
 					ovideoElement.play();
-					document.body.appendChild(ovideoElement);					
+
+					//var ovideoElement = document.createElement('video');
+					//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+					//ovideoElement.setAttribute("autoplay", "true");	
+					//ovideoElement.setAttribute("id", call.peer);	
+					//ovideoElement.play();
+					////document.body.appendChild(ovideoElement);					
+					//document.getElementById('othervideo').appendChild(ovideoElement);
 				});	
 						
 				call.on('close', function() {
-					var ovideoElement = document.getElementById(call.peer);
-					ovideoElement.parentElement.removeChild(ovideoElement);
+					var ovideoElement = document.getElementById('othervideo');
+					ovideoElement.src = null;
+
+					//var ovideoElement = document.getElementById(call.peer);
+					//ovideoElement.parentElement.removeChild(ovideoElement);
 				});
 				
 				call.on('error', function(err) {
-					var ovideoElement = document.getElementById(call.peer);
-					if (ovideoElement != null) {
-						ovideoElement.parentElement.removeChild(ovideoElement);
-					}
+					var ovideoElement = document.getElementById('othervideo');
+					ovideoElement.src = null;
+
+					//var ovideoElement = document.getElementById(call.peer);
+					//if (ovideoElement != null) {
+					//	ovideoElement.parentElement.removeChild(ovideoElement);
+					//}
 				});						
-						
 			}
 
-
-
-			if (navigator.geolocation) {
-
+			if (navigator.geolocation) 
+			{
 				navigator.geolocation.watchPosition(successCallback, errorCallback, {});
 
 				function successCallback(currentPosition) {
@@ -145,12 +211,28 @@
 		</script>
 	</head>
 	<body>
-		<video id="myvideo" width="320" height="180" muted autoplay></video>
-		<div id="messages"></div>
-		<div id="panel">
-			<input type="button" value="OK" onclick="sendMessage('Ok');">
-			<input type="button" value="HELP" onclick="sendPanic();">
+		<div class="container">
+			<div class="row">
+				<div id="myvideo_div" class="columns half video_div">
+					<video id="myvideo" width="320" height="240" muted autoplay></video>
+				</div>
+				<div id="othervideo_div" class="columns half video_div">
+					<video id="othervideo" width="320" height="240" autoplay>
+						<!-- Could put a default source -->
+					</video>
+				</div>
+			</div>
+			<div class="row">
+				<div id="messages" class="columns two-thirds">
+					<div class="message">Last message from a distant witness </div>
+					<div class="message">Long message from a distant witness which should have a line break or something of the sort depending on the screen size </div>
+					<div class="message">First message from a distant witness </div>
+				</div>
+				<div id="panel" class="columns one-third">
+					<button id="okbutton" onclick="sendMessage('Ok');">OK</button>
+					<button id="helpbutton" onclick="sendPanic();">HELP</button>
+				</div>
+			</div>    
 		</div>
 	</body>
-
 </html>
