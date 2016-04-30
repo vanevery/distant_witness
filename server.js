@@ -3,6 +3,12 @@ var https = require('https');
 var http = require('http');
 var fs = require('fs'); // Using the filesystem module
 var url = require('url');
+var keys = require('./keys.js');
+var twilio = require('twilio');
+
+var phonenumbers = [keys.mynumber];
+
+var twillio_client = new twilio.RestClient(keys.twilio_account_sid, keys.twilio_auth_token);
 
 var options = {
   key: fs.readFileSync('my-key.pem'),
@@ -154,6 +160,7 @@ io.sockets.on('connection',
 				// Send to everyone
 				io.sockets.emit('panic', data);
 			//}
+			sendSMS("PANIC");
 		});	
 		
 		// Moderated message from director to mobile
@@ -209,4 +216,22 @@ function log(socket, action, message) {
 	console.log(socket.id + ": " + action + ": " + message);
 }
 
+function sendSMS(message) {
+for (var i = 0; i < phonenumbers.length; i++) {
+twillio_client.sms.messages.create({
+    to: phonenumbers[i],
+    from: '+17187178830',
+    body: message
+}, function(error, message) {
+    if (!error) {
+        console.log('Success! The SID for this SMS message is:');
+        console.log(message.sid);
 
+        console.log('Message sent on:');
+        console.log(message.dateCreated);
+    } else {
+        console.log('Oops! There was an error.');
+        console.log(error);
+    }
+});
+}}

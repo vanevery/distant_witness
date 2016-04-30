@@ -1,13 +1,46 @@
 <html>
 	<head>
-		<link rel="stylesheet" type="text/css" href="smart-grid.css"> 
+		<link rel="stylesheet" type="text/css" href="smart-grid.css">
+
 		<style>
-			.video_div {
-				margin: 10px 10px 10px 10px;
-				width: 320px;
-				height: 240px;
+			body {
+				background-color: black;
 			}
 			
+			.container {
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				height: 100%;
+				width: 100%;
+			}
+			
+			#fullvideo_container {
+				z-index: 0;
+			}
+			
+			#smallvideo_container {
+				z-index: 1;
+			}
+		
+			#fullvideo_div {
+			}
+
+			#smallvideo_row {
+				width: 100%;
+				position: absolute;
+				bottom: 0px;
+			}
+			
+			#messages {
+				height: 120px;
+				overflow: hidden;
+			}
+			
+			#smallvideo_div {
+				bottom: 0px;
+			}
+						
 			.message {
 				margin: 10px 10px 10px 10px;
 				padding: 5px 5px 5px 5px;
@@ -18,22 +51,21 @@
 				/*text-shadow: 1px 1	px rgb(255,255,255);*/
 			}
 			
-			#okbutton {
-				background-color: white;
+			button {
+				font-family: sans-serif;
 			    color: black;
 			    border: 2px solid black; 
-			    width: 100px;
-			    height: 100px;
-			    margin: 10px 10px 10px 10px;
+			    width: 75px;
+			    height: 50px;
+			    margin: 5px 5px 5px 5px;			
+			}
+			
+			#okbutton {
+				background-color: white;
 			}
 
 			#helpbutton {
 				background-color: red;
-			    color: black;
-			    border: 2px solid black; 
-			    width: 100px;
-			    height: 100px;
-				margin: 10px 10px 10px 10px;
 			}
 			
 			
@@ -85,14 +117,22 @@
 
 			var peer;
 
-			var mediaConstraints = { audio: true, video: { width: 320, height: 240, facingMode: "environment" }};
+			var mediaConstraints = { audio: true, video: true};
+				//{ width: 640, height: 480, facingMode: "environment" }
 
 			if (navigator.mediaDevices.getUserMedia) {
+				console.log("navigator.mediaDevices.getUserMedia");
 				navigator.mediaDevices.getUserMedia(mediaConstraints).then(function(stream) {
+					
 					my_stream = stream;
-					var videoElement = document.getElementById('myvideo');
-					videoElement.src = window.URL.createObjectURL(stream) || stream;
-					videoElement.play();
+// 					var videoElement = document.getElementById('myvideo');
+// 					videoElement.src = window.URL.createObjectURL(stream) || stream;
+// 					videoElement.onloadedmetadata = function(e) {
+// 						//console.log(e);
+// 						///videoElement.width = e.target.videoWidth;
+// 						//videoElement.height = e.target.videoHeight;
+// 					};					
+// 					videoElement.play();
 
 					peer = new Peer({host: 'liveweb.itp.io', port: 9000, path: '/'});
 
@@ -115,6 +155,10 @@
 						incoming_call.on('stream', function(remoteStream) { 
 							var ovideoElement = document.getElementById('othervideo');
 							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+							ovideoElement.onloadedmetadata = function(e) {
+								//ovideoElement.width = e.target.videoWidth;
+								//ovideoElement.height = e.target.videoHeight;
+         					};
 							ovideoElement.play();
 
 							//var ovideoElement = document.createElement('video');
@@ -144,20 +188,23 @@
 							//if (ovideoElement != null) {
 							//	ovideoElement.parentElement.removeChild(ovideoElement);
 							//}
-						});
+						}); //incoming_call.on('error
 						
-					});
-
+					}); //peer.on('call')
 				}).catch(function(err) {
 					console.log('Failed to get local stream' ,err);
-				});
-			}	
+				}); //catch
+			}// if (getusermedia)
 
 			function makeCall(peeridtocall) {
 				var call = peer.call(peeridtocall,my_stream);
 				call.on('stream', function(remoteStream) {  
 					var ovideoElement = document.getElementById('othervideo');
 					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+					ovideoElement.onloadedmetadata = function(e) {
+						//ovideoElement.width = e.target.videoWidth;
+						//ovideoElement.height = e.target.videoHeight;
+					};
 					ovideoElement.play();
 
 					//var ovideoElement = document.createElement('video');
@@ -207,32 +254,68 @@
 			} else {
 				console.log("Geolocation Not Allowed");
 			}
-
+									
+			var landscapeOrPortrait = "landscape";
+			
+			function init() {
+				if (navigator.getUserMedia) {
+					console.log("navigator.getUserMedia");
+				} else {
+					console.log("navigator.getUserMedia is false");
+				}
+				
+				if (navigator.mediaDevices.getUserMedia) {
+					console.log("navigator.mediaDevices.getUserMedia");
+				} else {
+					console.log("navigator.mediaDevices.getUserMedia is false");
+				}
+				
+				
+										
+				if (window.innerHeight > window.innerWidth){
+    				landscapeOrPortrait = "portrait";
+				}
+				console.log(landscapeOrPortrait);
+				
+// 				if (landscapeOrPortrait == "landscape") {
+// //					document.getElementById('myvideo').width=null;
+// 					document.getElementById('myvideo').height=window.innerHeight;
+// 				} else {
+// 					document.getElementById('myvideo').width=window.innerWidth;
+// //					document.getElementById('myvideo').height=null;
+// 				}
+				
+			}
+			
+			window.addEventListener('load', init);
 		</script>
 	</head>
 	<body>
-		<div class="container">
-			<div class="row">
-				<div id="myvideo_div" class="columns half video_div">
-					<video id="myvideo" width="320" height="240" muted autoplay></video>
-				</div>
-				<div id="othervideo_div" class="columns half video_div">
-					<video id="othervideo" width="320" height="240" autoplay>
-						<!-- Could put a default source -->
-					</video>
+		<div class="container" id="fullvideo_container">
+			<div class="row" id="fullvideo_row">
+				<div id="fullvideo_div" class="columns twelve">
+<!-- 					<video id="myvideo" muted autoplay></video> -->
+						<img src="stopandfrisk.jpg">
 				</div>
 			</div>
-			<div class="row">
-				<div id="messages" class="columns two-thirds">
+		</div>
+		<div class="container" id="smallvideo_container">
+			<div class="row" id="smallvideo_row">
+				<div id="messages" class="columns seven">
 					<div class="message">Last message from a distant witness </div>
 					<div class="message">Long message from a distant witness which should have a line break or something of the sort depending on the screen size </div>
 					<div class="message">First message from a distant witness </div>
 				</div>
-				<div id="panel" class="columns one-third">
+				<div id="panel" class="columns two">
 					<button id="okbutton" onclick="sendMessage('Ok');">OK</button>
-					<button id="helpbutton" onclick="sendPanic();">HELP</button>
+					<button id="helpbutton" onclick="sendPanic();">HELP</button>				
 				</div>
-			</div>    
+				<div id="smallvideo_div" class="columns three">
+					<video id="othervideo" width="160" height="120" muted autoplay>
+						<!-- Could put a default source -->
+					</video>
+				</div>
+			</div>
 		</div>
 	</body>
 </html>

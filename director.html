@@ -2,18 +2,74 @@
 	<head>
 		<link rel="stylesheet" type="text/css" href="smart-grid.css"> 
 		<style>
-			.myvideodiv {
-				margin: 10px 10px 10px 10px;
-				width: 320px;
-				height: 240px;
-				background-color: rgb(64,64,64);
+			body {
+				background-color: rgb(200,200,200);
 			}
 			
-			.remotevideodiv {
+			.container {				
+/* 
+				padding: 2px 2px 2px 2px;
+ */
+/* 
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				height: 100%;
+				width: 100%;
+ */
+			}
+
+			.row {
+			
+			}
+			
+			.columns {
+/* 
+				padding: 2px 2px 2px 2px;
+ */
+			}
+			
+			#fullvideo_container {
+/* 				z-index: 0; */
+			}
+			
+			#smallvideo_container {
+/* 				z-index: 1; */
+			}
+		
+			#fullvideo_div {
+/* 				padding: 5px 5px 5px 5px; */
+/* 				margin: 5px 5px 5px 5px; */
 				background-color: rgb(128,64,64);
-				margin: 10px 10px 10px 10px;
-				width: 320px;
-				height: 240px;			
+				margin-left: auto;
+				margin-right: auto;				
+				text-align: center;
+			}
+
+			#smallvideo_row {
+/* 
+				width: 100%;
+				position: absolute;
+				bottom: 0px;
+ */
+			}
+			
+			#smallvideo_div {
+				background-color: rgb(128,128,128);				
+				margin-left: auto;
+				margin-right: auto;				
+				text-align: center;
+			}
+			
+/* 
+			#messages {
+				height: 120px;
+				overflow: hidden;
+			}
+ */
+			
+			#smallvideo_div {
+/* 				bottom: 0px; */
 			}
 			
 			.remotemessage {
@@ -58,8 +114,23 @@
 			}
 			
 			#messages {
-				height: 300px;
-				overflow: scroll;
+				height: 200px;
+			}
+			
+			#scrollingmessages {
+				height: 170px;
+				overflow-x: auto;
+				overflow-y: auto;			
+			}
+			
+			#mapoutter {
+				background-color: rgb(128,64,64);
+				text-align: center;
+			}
+			
+			#mapdiv {
+				margin-left: auto;
+				margin-right: auto;			
 			}
 		</style>
 		
@@ -87,10 +158,10 @@
 
 			socket.on('chatmessage', function (data) {
 				var newmessage = document.createElement("div");
-				newmessage.className = "message";
+				newmessage.className = "remotemessage";
 				newmessage.innerHTML = data;
 				
-				var messages = document.getElementById("messages");
+				var messages = document.getElementById("scrollingmessages");
 				if (messages.children.length > 0) {
 					messages.insertBefore(newmessage, messages.children[0]);
 				} else {
@@ -155,43 +226,52 @@
 						console.log("peer.on call");
 						incoming_call.answer(my_stream); 
 						incoming_call.on('stream', function(remoteStream) {  
-							var ovideoDiv = document.createElement('div');
-							ovideoDiv.setAttribute("id","div_" + incoming_call.peer);
-							ovideoDiv.className = "columns six remotevideodiv";
-							document.getElementById('mobilevideos').appendChild(ovideoDiv);
-						
-							var ovideoElement = document.createElement('video');
+
+							var ovideoElement = document.getElementById('othervideo');
 							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-							ovideoElement.setAttribute("autoplay", "true");	
-							ovideoElement.setAttribute("id", incoming_call.peer);	
-							ovideoElement.setAttribute("width", "320");
-							ovideoElement.setAttribute("height", "240");	
-							ovideoElement.setAttribute("controls", "controls");								
-							ovideoElement.play();
-							ovideoElement.addEventListener('click', function() {
-								var connected = false;
-								for (var i = 0; i < connectedcalls.length; i++) 
-								{
-									if (connectedcalls[i] == incoming_call.peer) {
-										connected = true;
-									}
-								}
-								
-								if (!connected) {
-									connectedcalls.push(incoming_call.peer);
-									sendPeerIdConnect(incoming_call.peer); 
-								} else {
-									sendPeerIdDisconnect(incoming_call.peer);
-
-									for (var i = 0; i < connectedcalls.length; i++) {
-										if (connectedcalls[i] == incoming_call.peer) {
-											connectedcalls.splice(i,1);
-										}
-									}																		
-								}
-							});
-
-							ovideoDiv.appendChild(ovideoElement);							
+							ovideoElement.onloadedmetadata = function(e) {
+								//ovideoElement.width = e.target.videoWidth;
+								//ovideoElement.height = e.target.videoHeight;
+         					};
+							ovideoElement.play();						
+						
+// 							var ovideoDiv = document.createElement('div');
+// 							ovideoDiv.setAttribute("id","div_" + incoming_call.peer);
+// 							ovideoDiv.className = "columns six remotevideodiv";
+// 							document.getElementById('mobilevideos').appendChild(ovideoDiv);
+// 						
+// 							var ovideoElement = document.createElement('video');
+// 							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+// 							ovideoElement.setAttribute("autoplay", "true");	
+// 							ovideoElement.setAttribute("id", incoming_call.peer);	
+// 							ovideoElement.setAttribute("width", "320");
+// 							ovideoElement.setAttribute("height", "240");	
+// 							ovideoElement.setAttribute("controls", "controls");								
+// 							ovideoElement.play();
+// 							ovideoElement.addEventListener('click', function() {
+// 								var connected = false;
+// 								for (var i = 0; i < connectedcalls.length; i++) 
+// 								{
+// 									if (connectedcalls[i] == incoming_call.peer) {
+// 										connected = true;
+// 									}
+// 								}
+// 								
+// 								if (!connected) {
+// 									connectedcalls.push(incoming_call.peer);
+// 									sendPeerIdConnect(incoming_call.peer); 
+// 								} else {
+// 									sendPeerIdDisconnect(incoming_call.peer);
+// 
+// 									for (var i = 0; i < connectedcalls.length; i++) {
+// 										if (connectedcalls[i] == incoming_call.peer) {
+// 											connectedcalls.splice(i,1);
+// 										}
+// 									}																		
+// 								}
+// 							});
+// 
+// 							ovideoDiv.appendChild(ovideoElement);							
 						});
 		
 						incoming_call.on('close', function() {
@@ -210,15 +290,15 @@
 				
 						incoming_call.on('error', function(err) {
 							console.log(err);
-							var ovideoElement = document.getElementById(incoming_call.peer);
-							if (ovideoElement != null) {
-								ovideoElement.parentElement.removeChild(ovideoElement);
-							}
-
-							var ovideoDiv = document.getElementById("div_" + incoming_call.peer);
-							if (ovideoDiv != null) {
-								ovideoDiv.parentElement.removeChild(ovideoDiv);
-							}							
+// 							var ovideoElement = document.getElementById(incoming_call.peer);
+// 							if (ovideoElement != null) {
+// 								ovideoElement.parentElement.removeChild(ovideoElement);
+// 							}
+// 
+// 							var ovideoDiv = document.getElementById("div_" + incoming_call.peer);
+// 							if (ovideoDiv != null) {
+// 								ovideoDiv.parentElement.removeChild(ovideoDiv);
+// 							}							
 						});						
 										
 					});
@@ -233,68 +313,77 @@
 				var call = peer.call(peeridtocall,my_stream);
 				call.on('stream', function(remoteStream) {  
 					console.log("makeCall: call.on stream");
-					var ovideoDiv = document.createElement('div');
-					ovideoDiv.setAttribute("id","div_" + call.peer);
-					ovideoDiv.className = "columns six remotevideodiv";
-					document.getElementById('mobilevideos').appendChild(ovideoDiv);
-				
-					var ovideoElement = document.createElement('video');
-					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-					ovideoElement.setAttribute("autoplay", "true");	
-					ovideoElement.setAttribute("id", call.peer);
-					ovideoElement.setAttribute("width", "320");
-					ovideoElement.setAttribute("height", "240");
-					ovideoElement.setAttribute("controls", "controls");	
-					ovideoElement.play();
-					ovideoDiv.appendChild(ovideoElement);
-
-					ovideoElement.addEventListener('click', function() {
-						var connected = false;
-						for (var i = 0; i < connectedcalls.length; i++) 
-						{
-							if (connectedcalls[i] == call.peer) {
-								connected = true;
-							}
-						}
 					
-						if (!connected) {
-							connectedcalls.push(call.peer);
-							sendPeerIdConnect(call.peer); 
-						} else {
-							sendPeerIdDisconnect(call.peer);
-
-							for (var i = 0; i < connectedcalls.length; i++) {
-								if (connectedcalls[i] == call.peer) {
-									connectedcalls.splice(i,1);
-								}
-							}																		
-						}
-					});					
+					var ovideoElement = document.getElementById('othervideo');
+					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+					ovideoElement.onloadedmetadata = function(e) {
+						//ovideoElement.width = e.target.videoWidth;
+						//ovideoElement.height = e.target.videoHeight;
+					};
+					ovideoElement.play();
+										
+// 					var ovideoDiv = document.createElement('div');
+// 					ovideoDiv.setAttribute("id","div_" + call.peer);
+// 					ovideoDiv.className = "columns six remotevideodiv";
+// 					document.getElementById('mobilevideos').appendChild(ovideoDiv);
+// 				
+// 					var ovideoElement = document.createElement('video');
+// 					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+// 					ovideoElement.setAttribute("autoplay", "true");	
+// 					ovideoElement.setAttribute("id", call.peer);
+// 					ovideoElement.setAttribute("width", "320");
+// 					ovideoElement.setAttribute("height", "240");
+// 					ovideoElement.setAttribute("controls", "controls");	
+// 					ovideoElement.play();
+// 					ovideoDiv.appendChild(ovideoElement);
+// 
+// 					ovideoElement.addEventListener('click', function() {
+// 						var connected = false;
+// 						for (var i = 0; i < connectedcalls.length; i++) 
+// 						{
+// 							if (connectedcalls[i] == call.peer) {
+// 								connected = true;
+// 							}
+// 						}
+// 					
+// 						if (!connected) {
+// 							connectedcalls.push(call.peer);
+// 							sendPeerIdConnect(call.peer); 
+// 						} else {
+// 							sendPeerIdDisconnect(call.peer);
+// 
+// 							for (var i = 0; i < connectedcalls.length; i++) {
+// 								if (connectedcalls[i] == call.peer) {
+// 									connectedcalls.splice(i,1);
+// 								}
+// 							}																		
+// 						}
+// 					});					
 					
 				});		
 		
 				call.on('close', function() {
 					console.log("call.on close");
-					var ovideoElement = document.getElementById(call.peer);
-					ovideoElement.parentElement.removeChild(ovideoElement);
-					
-					var ovideoDiv = document.getElementById("div_" + call.peer);
-					if (ovideoDiv != null) {
-						ovideoDiv.parentElement.removeChild(ovideoDiv);
-					}
+// 					var ovideoElement = document.getElementById(call.peer);
+// 					ovideoElement.parentElement.removeChild(ovideoElement);
+// 					
+// 					var ovideoDiv = document.getElementById("div_" + call.peer);
+// 					if (ovideoDiv != null) {
+// 						ovideoDiv.parentElement.removeChild(ovideoDiv);
+// 					}
 				});
 				
 				call.on('error', function(err) {
 					console.log(err);
-					var ovideoElement = document.getElementById(call.peer);
-					if (ovideoElement != null) {
-						ovideoElement.parentElement.removeChild(ovideoElement);
-					}
-					
-					var ovideoDiv = document.getElementById("div_" + call.peer);
-					if (ovideoDiv != null) {
-						ovideoDiv.parentElement.removeChild(ovideoDiv);
-					}
+// 					var ovideoElement = document.getElementById(call.peer);
+// 					if (ovideoElement != null) {
+// 						ovideoElement.parentElement.removeChild(ovideoElement);
+// 					}
+// 					
+// 					var ovideoDiv = document.getElementById("div_" + call.peer);
+// 					if (ovideoDiv != null) {
+// 						ovideoDiv.parentElement.removeChild(ovideoDiv);
+// 					}
 				});						
 			}
 
@@ -302,7 +391,7 @@
 			var map = null;
 			
 			function initMap() {
-			  var myLatLng = {lat: 40, lng: -74};
+			  var myLatLng = {lat: 40.69818, lng: -74.02271};
 
 			  // Create a map object and specify the DOM element for display.
 			  map = new google.maps.Map(document.getElementById('mapdiv'), {
@@ -348,28 +437,36 @@
 		<div class="container">
 			<div id="title">Distant Witness</div>
 		</div>	
-		<div class="container">
-			<div id="mobilevideos" class="row">
-				<div id="myvideo_div" class="columns six myvideodiv">
-					<video id="myvideo" width="320" height="240" muted autoplay></video>
+		<div class="container" id="fullvideo_container">
+			<div class="row" id="fullvideo_row">
+				<div id="fullvideo_div" class="columns nine">
+<!-- 					<video id="othervideo" width="640" height="480" muted autoplay></video> -->
+						<img src="stopandfrisk.jpg" width="640" height="480">
 				</div>
+				<div id="smallvideo_div" class="columns three">
+					<video id="myvideo" width="160" height="120" muted autoplay>
+						<!-- Could put a default source -->
+					</video>
+				</div>				
 			</div>
+		</div>
+		
+		<div class="container">
 			<div class="row">
-				<div id="messages" class="columns one-third">
-					<div class="remotemessage">Last message from a distant witness </div>
-					<div class="mymessage">Long message to a distant witness which should have a line break or something of the sort depending on the screen size </div>
-					<div class="remotemessage">First message from a distant witness </div>
+				<div id="messages" class="columns seven">
+					<div id="scrollingmessages">
+						<div class="mymessage">Last message from a distant witness </div>
+						<div class="remotemessage">Ok</div>
+						<div class="mymessage">Long message to a distant witness which should have a line break or something of the sort depending on the screen size </div>
+						<div class="mymessage">First message from a distant witness </div>
+					</div>
+					<input type="text" id="thetext">
+					<button id="sendbutton" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">SEND</button>					
 				</div>
-				<div id="mapoutter" class="columns two-thirds">
-					<div id="mapdiv" style="width: 620px; height: 300px;"></div>
+				<div id="mapoutter" class="columns five">
+					<div id="mapdiv" style="width: 240px; height: 200px;"></div>
 				</div>
 			</div>    
-			<div class="row">
-				<div class="columns one-third">
-					<input type="text" id="thetext">
-					<button id="sendbutton" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">SEND</button>
-				</div>
-			</div>
 		</div>
 	</body>
 
