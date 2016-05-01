@@ -85,10 +85,10 @@
 					videoElement.src = window.URL.createObjectURL(stream) || stream;
 					videoElement.play();
 
-					var otherVideoElement = document.getElementById('othervideo');
-					otherVideoElement.src = window.URL.createObjectURL(stream) || stream;
-					otherVideoElement.play();
-
+// 					var otherVideoElement = document.getElementById('othervideo');
+// 					otherVideoElement.src = window.URL.createObjectURL(stream) || stream;
+// 					otherVideoElement.play();
+// 
 
 					peer = new Peer({host: 'localhost', port: 9000, path: '/'});
 
@@ -424,7 +424,8 @@
 
 	</head>
 	<body>
-		<div class="container_12 nomargin">
+		<div style="width: 100%"; text-align: center">	
+		<div class="container_12 style="margin-left: auto; margin-right:auto;">
 			<div class="grid_12 nomargin">
 				<div id="title_div">Distant Witness</div>
 			</div>
@@ -465,6 +466,7 @@
 					</video>
 				</div>				
 			</div>    
+		</div>
 		</div>
 	</body>
 
