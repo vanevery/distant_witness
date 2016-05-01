@@ -134,16 +134,16 @@
 			}
 		</style>
 		
-		<script src="peer.min.js"></script>	
-		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAGE3faVAYtFxrVWtxKWXklXksPVaXXw6E&callback=initMap"
-    async defer></script>	
-		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+		<script type="text/javascript" src="peer.min.js"></script>	
+		<script type="text/javascript" src="socket.io.js"></script>
 
 		<script type="text/javascript">
+			const httpsserver = "localhost";
+			const httpsport = 8081;
 
 			var connectedcalls = [];
 
-			var socket = io.connect();
+			var socket = io.connect("https://localhost:"+httpsport);
 			
 			socket.on('connect', function() {
 				socket.emit('type','director');
@@ -177,7 +177,7 @@
 			
 			socket.on('location', function(data) {
 				console.log("socket on location");
-				addMoveMarker(socket.id, data.lat, data.lng);
+// 				addMoveMarker(socket.id, data.lat, data.lng);
 			});
 			
 			function sendmessage(message) {
@@ -212,7 +212,7 @@
 					videoElement.src = window.URL.createObjectURL(stream) || stream;
 					videoElement.play();
 
-					peer = new Peer({host: 'liveweb.itp.io', port: 9000, path: '/'});
+					peer = new Peer({host: 'localhost', port: 9000, path: '/'});
 
 					// Get an ID from the PeerJS server		
 					peer.on('open', function(id) {
@@ -388,47 +388,47 @@
 			}
 
 
-			var map = null;
+			// var map = null;
+// 			
+// 			function initMap() {
+// 			  var myLatLng = {lat: 40.69818, lng: -74.02271};
+// 
+// 			  // Create a map object and specify the DOM element for display.
+// 			  map = new google.maps.Map(document.getElementById('mapdiv'), {
+// 				center: myLatLng,
+// 				scrollwheel: false,
+// 				zoom: 12
+// 			  });
+// 
+// 			}
 			
-			function initMap() {
-			  var myLatLng = {lat: 40.69818, lng: -74.02271};
-
-			  // Create a map object and specify the DOM element for display.
-			  map = new google.maps.Map(document.getElementById('mapdiv'), {
-				center: myLatLng,
-				scrollwheel: false,
-				zoom: 12
-			  });
-
-			}
-			
-			var markers = [];
-			// {id, marker, lat, lng}
-			
-			function addMoveMarker(id, lat, lng) {
-				var found = false;
-				for (var i = 0; i < markers.length; i++) {
-					if (markers[i].id === id) {
-						// Update marker
-						markers[i].marker.setPosition({lat: lat, lng: lng});
-						markers[i].lat = lat;
-						markers[i].lng = lng;
-						found = true;
-						break;
-					}
-				}		
-				if (!found) {
-					// Create a marker and set its position.
-				  	var marker = new google.maps.Marker({
-						map: map,
-						position: {lat: lat, lng: lng},
-						title: 'Mobile'
-				  	});	
-				  	markers.push({id, marker, lat, lng});
-				}	
-				
-				map.setCenter({lat: lat, lng: lng});
-			}
+			// var markers = [];
+// 			// {id, marker, lat, lng}
+// 			
+// 			function addMoveMarker(id, lat, lng) {
+// 				var found = false;
+// 				for (var i = 0; i < markers.length; i++) {
+// 					if (markers[i].id === id) {
+// 						// Update marker
+// 						markers[i].marker.setPosition({lat: lat, lng: lng});
+// 						markers[i].lat = lat;
+// 						markers[i].lng = lng;
+// 						found = true;
+// 						break;
+// 					}
+// 				}		
+// 				if (!found) {
+// 					// Create a marker and set its position.
+// 				  	var marker = new google.maps.Marker({
+// 						map: map,
+// 						position: {lat: lat, lng: lng},
+// 						title: 'Mobile'
+// 				  	});	
+// 				  	markers.push({id, marker, lat, lng});
+// 				}	
+// 				
+// 				map.setCenter({lat: lat, lng: lng});
+// 			}
 			
 			//window.addEventListener('load', initMap);
 		</script>
@@ -440,8 +440,7 @@
 		<div class="container" id="fullvideo_container">
 			<div class="row" id="fullvideo_row">
 				<div id="fullvideo_div" class="columns nine">
-<!-- 					<video id="othervideo" width="640" height="480" muted autoplay></video> -->
-						<img src="stopandfrisk.jpg" width="640" height="480">
+					<video id="othervideo" width="640" height="480" muted autoplay></video>
 				</div>
 				<div id="smallvideo_div" class="columns three">
 					<video id="myvideo" width="160" height="120" muted autoplay>

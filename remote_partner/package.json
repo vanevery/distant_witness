@@ -1,0 +1,29 @@
+{
+  "name": "Distant_Witness",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vanevery/distant_witness.git"
+  },
+  "keywords": [],
+  "author": "Shawn Van Every",
+  "license": "",
+  "bugs": {
+    "url": "https://github.com/vanevery/distant_witness/issues"
+  },
+  "homepage": "https://github.com/vanevery/distant_witness",
+  "devDependencies": {
+    "electron-prebuilt": "^0.37.8"
+  },
+  "dependencies": {
+    "http": "0.0.0",
+    "https": "^1.0.0",
+    "peer": "^0.2.8",
+    "socket.io": "^1.4.5"
+  }
+}
