@@ -238,11 +238,13 @@ app.on('activate', function () {
 		 
 				if (socket.type == "mobile") {
 					// If mobile, probably not usual
-					io.sockets.emit('chatmessage', data);
+					//io.sockets.emit('chatmessage', data);
+					socket.broadcast.emit('chatmessage', data);
 				}
 				else if (socket.type == "director") {
 					// If director, send to everyone
-					io.sockets.emit('chatmessage', data);
+					//io.sockets.emit('chatmessage', data);
+					socket.broadcast.emit('chatmessage', data);
 				} 
 				else if (socket.type == "remote") {
 					// If remote audience, send to each-other and director

@@ -1,139 +1,5 @@
 <html>
 	<head>
-		<link rel="stylesheet" type="text/css" href="smart-grid.css"> 
-		<style>
-			body {
-				background-color: rgb(200,200,200);
-			}
-			
-			.container {				
-/* 
-				padding: 2px 2px 2px 2px;
- */
-/* 
-				position: absolute;
-				top: 0px;
-				left: 0px;
-				height: 100%;
-				width: 100%;
- */
-			}
-
-			.row {
-			
-			}
-			
-			.columns {
-/* 
-				padding: 2px 2px 2px 2px;
- */
-			}
-			
-			#fullvideo_container {
-/* 				z-index: 0; */
-			}
-			
-			#smallvideo_container {
-/* 				z-index: 1; */
-			}
-		
-			#fullvideo_div {
-/* 				padding: 5px 5px 5px 5px; */
-/* 				margin: 5px 5px 5px 5px; */
-				background-color: rgb(128,64,64);
-				margin-left: auto;
-				margin-right: auto;				
-				text-align: center;
-			}
-
-			#smallvideo_row {
-/* 
-				width: 100%;
-				position: absolute;
-				bottom: 0px;
- */
-			}
-			
-			#smallvideo_div {
-				background-color: rgb(128,128,128);				
-				margin-left: auto;
-				margin-right: auto;				
-				text-align: center;
-			}
-			
-/* 
-			#messages {
-				height: 120px;
-				overflow: hidden;
-			}
- */
-			
-			#smallvideo_div {
-/* 				bottom: 0px; */
-			}
-			
-			.remotemessage {
-				padding: 5px 5px 5px 5px;
-				margin: 5px 5px 5px 5px;
-				font-family: sans-serif;
-				background-color: rgb(128,64,64);
-				font-size: 20px;
-				color: rgb(0,0,0);
-				/*text-shadow: 1px 1	px rgb(255,255,255);*/			
-			}
-			
-			.mymessage {
-				padding: 5px 5px 5px 5px;
-				margin: 5px 5px 5px 5px;
-				font-family: sans-serif;
-				background-color: rgb(128,128,128);
-				font-size: 20px;
-				color: rgb(0,0,0);
-				/*text-shadow: 1px 1px rgb(255,255,255);*/
-			}
-			
-			#title {
-				font-family: sans-serif;
-				font-size: 30px;
-			}
-			
-			#thetext {
-				font-family: sans-serif;
-				font-size: 20px;
-				width: 200px;
-				height: 30px;	
-				border: 2px solid black; 
-			}
-			
-			#sendbutton {
-				background-color: white;
-			    color: black;
-			    border: 2px solid black; 
-			    width: 50px;
-			    height: 30px;
-			}
-			
-			#messages {
-				height: 200px;
-			}
-			
-			#scrollingmessages {
-				height: 170px;
-				overflow-x: auto;
-				overflow-y: auto;			
-			}
-			
-			#mapoutter {
-				background-color: rgb(128,64,64);
-				text-align: center;
-			}
-			
-			#mapdiv {
-				margin-left: auto;
-				margin-right: auto;			
-			}
-		</style>
-		
 		<script type="text/javascript" src="peer.min.js"></script>	
 		<script type="text/javascript" src="socket.io.js"></script>
 
@@ -152,13 +18,9 @@
 				}	
 			});
 
-// 			socket.on('chatmessage', function (data) {
-// 				document.getElementById("messages").innerHTML = "<div onclick='sendModeratedMessage(this.innerHTML);'>" + data + "</div><br />\n" + document.getElementById("messages").innerHTML;
-// 			});
-
 			socket.on('chatmessage', function (data) {
 				var newmessage = document.createElement("div");
-				newmessage.className = "remotemessage";
+				newmessage.className = "message remotemessage";
 				newmessage.innerHTML = data;
 				
 				var messages = document.getElementById("scrollingmessages");
@@ -167,7 +29,6 @@
 				} else {
 					messages.appendChild(newmessage);
 				}
-				//document.getElementById("messages").innerHTML = data + "<br />\n" + document.getElementById("messages").innerHTML;
 			});
 
 			socket.on('peerid', function(data) {
@@ -181,6 +42,18 @@
 			});
 			
 			function sendmessage(message) {
+
+				var newmessage = document.createElement("div");
+				newmessage.className = "message mymessage";
+				newmessage.innerHTML = message;
+				
+				var messages = document.getElementById("scrollingmessages");
+				if (messages.children.length > 0) {
+					messages.insertBefore(newmessage, messages.children[0]);
+				} else {
+					messages.appendChild(newmessage);
+				}			
+			
 				socket.emit('chatmessage', message);
 			};
 			
@@ -211,6 +84,11 @@
 					var videoElement = document.getElementById('myvideo');
 					videoElement.src = window.URL.createObjectURL(stream) || stream;
 					videoElement.play();
+
+					var otherVideoElement = document.getElementById('othervideo');
+					otherVideoElement.src = window.URL.createObjectURL(stream) || stream;
+					otherVideoElement.play();
+
 
 					peer = new Peer({host: 'localhost', port: 9000, path: '/'});
 
@@ -432,39 +310,160 @@
 			
 			//window.addEventListener('load', initMap);
 		</script>
+		
+			
+		<link rel="stylesheet" type="text/css" href="960.css"> 
+		<style>
+			body {
+				background-color: rgb(66,66,66);
+			}			
+			
+			.nomargin {
+				margin: 10px;
+				border: 0px;
+				padding: 0px;
+				
+			}
+			
+			.test {
+				background-color: rgb(128,64,64);			
+			}
+
+			#title_div {
+				background-color: black;
+				color: rgb(200,200,200);
+				font-family: sans-serif;
+				font-size: 30px;
+				padding-left: 100px;
+				padding-top: 5px;
+				padding-bottom: 5px;
+				padding-right: 0px;
+				text-transform: uppercase;
+			}			
+								
+			#fullvideo_div {
+				background-color: rgb(128,64,64);
+			}
+			
+			#map_div {
+				background-color: rgb(128,64,64);
+				overflow: hidden;
+			}			
+
+			#smallvideo_div {
+				background-color: rgb(128,64,64);
+				margin-left: auto;
+				margin-right: auto;				
+				text-align: center;
+			}
+				
+			.message {
+				padding: 5px 5px 5px 5px;
+				margin: 5px 5px 5px 5px;
+				font-family: sans-serif;
+				font-size: 20px;			
+				color: rgb(0,0,0);
+				background-color: rgb(128,128,128);
+			}	
+						
+			.remotemessage {
+			}
+			
+			.mymessage {
+ 				text-align: right;
+ 			}
+
+			input, textarea, select, button {
+			  margin: 0;
+
+			  -webkit-box-sizing: border-box; /* For legacy WebKit based browsers */
+				 -moz-box-sizing: border-box; /* For legacy (Firefox <29) Gecko based browsers */
+					  box-sizing: border-box;
+			}
+						
+			#thetext {
+				font-family: sans-serif;
+				font-size: 20px;
+				width: 200px;
+				height: 30px;	
+				background-color: rgb(255,255,255);
+				border: 1px solid black;
+			}
+			
+			#sendbutton {
+			    color: black;
+				background-color: rgb(128,128,128);
+			    width: 50px;
+			    height: 30px;
+				border: 1px solid black;
+				-webkit-appearance: none;	
+				vertical-align: top;		    
+			}
+			
+			#messages {
+				background-color: rgb(33,33,33);
+				height: 230px;
+				position: relative;
+			}
+			
+			#send_div {
+				text-align: right;
+				height: 30px;	
+				position: absolute;
+				bottom: 5px;
+				right: 5px;
+			}
+			
+			#scrollingmessages {
+				height: 190px;
+				overflow-x: auto;
+				overflow-y: auto;
+			}
+	</style>
+		
+
 	</head>
 	<body>
-		<div class="container">
-			<div id="title">Distant Witness</div>
-		</div>	
-		<div class="container" id="fullvideo_container">
-			<div class="row" id="fullvideo_row">
-				<div id="fullvideo_div" class="columns nine">
-					<video id="othervideo" width="640" height="480" muted autoplay></video>
+		<div class="container_12 nomargin">
+			<div class="grid_12 nomargin">
+				<div id="title_div">Distant Witness</div>
+			</div>
+			<div class="grid_8 nomargin">
+				<div id="fullvideo_div">
+					<video id="othervideo" width="100%" muted autoplay>
+						<!-- Canned Video?? -->
+					</video>
 				</div>
-				<div id="smallvideo_div" class="columns three">
-					<video id="myvideo" width="160" height="120" muted autoplay>
-						<!-- Could put a default source -->
+			</div>
+			<div class="grid_4 nomargin">
+				<div id="map_div">
+					<img src="map.png" width="300" height="465">
+				</div>
+			</div>
+			
+			<div class="grid_8 nomargin">
+				<div id="messages">
+					<div id="scrollingmessages">
+						<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Ok</div>
+						<div class="message mymessage">Let me know if you think I should start recording or share with the group</div>
+						<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Mobile Activist: Yes</div>
+						<div class="message mymessage">Are you at the scene?</div>
+						<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Mobile Activist: Ok</div>
+						<div class="message mymessage">Let me know if you think I should start recording or share with the group</div>
+						<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Mobile Activist: Yes</div>
+						<div class="message mymessage">Are you at the scene?</div>
+					</div>
+					<div id="send_div">
+						<input type="text" id="thetext">
+						<button id="sendbutton" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">Send</button>					
+					</div>
+				</div>
+			</div>
+			<div class="grid_4 nomargin">
+				<div id="smallvideo_div">
+					<video id="myvideo" width="100%" muted autoplay>
 					</video>
 				</div>				
-			</div>
-		</div>
-		
-		<div class="container">
-			<div class="row">
-				<div id="messages" class="columns seven">
-					<div id="scrollingmessages">
-						<div class="mymessage">Last message from a distant witness </div>
-						<div class="remotemessage">Ok</div>
-						<div class="mymessage">Long message to a distant witness which should have a line break or something of the sort depending on the screen size </div>
-						<div class="mymessage">First message from a distant witness </div>
-					</div>
-					<input type="text" id="thetext">
-					<button id="sendbutton" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">SEND</button>					
-				</div>
-				<div id="mapoutter" class="columns five">
-					<div id="mapdiv" style="width: 240px; height: 200px;"></div>
-				</div>
 			</div>    
 		</div>
 	</body>
