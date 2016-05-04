@@ -1,0 +1,22 @@
+{
+   "background_color": "#ffffff",
+   "name": "Mobile Witness",
+   "short_name": "mobile_witness",
+   "xwalk_app_version": "0.1",
+   "start_url": "index.html",
+   "xwalk_package_id": "com.mobvcasting.mobile_witness",
+   "icons": [
+     {
+         "src": "icon.png",
+         "sizes": "72x72"
+     }
+   ],
+   "xwalk_permissions": [
+    "Geolocation"
+  ],
+  "xwalk_android_permissions": [
+    "CAMERA",
+    "MODIFY_AUDIO_SETTINGS",
+    "RECORD_AUDIO"
+  ]   
+}

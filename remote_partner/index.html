@@ -4,6 +4,8 @@
 		<script type="text/javascript" src="socket.io.js"></script>
 
 		<script type="text/javascript">
+			var cannedVideo = "";
+		
 			const httpsserver = "localhost";
 			const httpsport = 8081;
 
@@ -21,7 +23,7 @@
 			socket.on('chatmessage', function (data) {
 				var newmessage = document.createElement("div");
 				newmessage.className = "message remotemessage";
-				newmessage.innerHTML = data;
+				newmessage.innerHTML = '<span style="color: rgb(200,200,200);">Mobile Activist:</span> ' + data;
 				
 				var messages = document.getElementById("scrollingmessages");
 				if (messages.children.length > 0) {
@@ -90,7 +92,7 @@
 // 					otherVideoElement.play();
 // 
 
-					peer = new Peer({host: 'localhost', port: 9000, path: '/'});
+					peer = new Peer({host: 'localhost', port: 9000, path: '/', secure: true});
 
 					// Get an ID from the PeerJS server		
 					peer.on('open', function(id) {
@@ -249,10 +251,28 @@
 // 					if (ovideoDiv != null) {
 // 						ovideoDiv.parentElement.removeChild(ovideoDiv);
 // 					}
+
+					var ovideoElement = document.getElementById('othervideo');
+					ovideoElement.src = cannedVideo;
+					ovideoElement.onloadedmetadata = function(e) {
+						//ovideoElement.width = e.target.videoWidth;
+						//ovideoElement.height = e.target.videoHeight;
+					};
+					ovideoElement.play();
 				});
 				
 				call.on('error', function(err) {
 					console.log(err);
+					
+					var ovideoElement = document.getElementById('othervideo');
+					ovideoElement.src = cannedVideo;
+					ovideoElement.onloadedmetadata = function(e) {
+						//ovideoElement.width = e.target.videoWidth;
+						//ovideoElement.height = e.target.videoHeight;
+					};
+					ovideoElement.play();
+
+					
 // 					var ovideoElement = document.getElementById(call.peer);
 // 					if (ovideoElement != null) {
 // 						ovideoElement.parentElement.removeChild(ovideoElement);
@@ -365,6 +385,15 @@
 				color: rgb(0,0,0);
 				background-color: rgb(128,128,128);
 			}	
+                        
+			.whitemessage {
+                                padding: 5px 5px 5px 5px;
+                                margin: 5px 5px 5px 5px;
+                                font-family: sans-serif;
+                                font-size: 20px;
+				color: rgb(0,0,0);
+                                background-color: rgb(128,128,128);
+                        }
 						
 			.remotemessage {
 			}
@@ -425,48 +454,64 @@
 	</head>
 	<body>
 		<div style="width: 100%"; text-align: center">	
-		<div class="container_12 style="margin-left: auto; margin-right:auto;">
-			<div class="grid_12 nomargin">
-				<div id="title_div">Distant Witness</div>
-			</div>
-			<div class="grid_8 nomargin">
-				<div id="fullvideo_div">
-					<video id="othervideo" width="100%" muted autoplay>
-						<!-- Canned Video?? -->
-					</video>
+			<div class="container_12 style="margin-left: auto; margin-right:auto;">
+				<div class="grid_12 nomargin">
+					<div id="title_div">Distant Witness</div>
 				</div>
-			</div>
-			<div class="grid_4 nomargin">
-				<div id="map_div">
-					<img src="map.png" width="300" height="465">
+				<div class="grid_8 nomargin">
+					<div id="fullvideo_div">
+						<video id="othervideo" width="100%" muted autoplay>
+							<!-- Canned Video?? -->
+						</video>
+					</div>
 				</div>
-			</div>
+				<div class="grid_4 nomargin">
+					<div id="map_div">
+						<img src="map.png" width="300" height="465">
+					</div>
+				</div>
 			
-			<div class="grid_8 nomargin">
-				<div id="messages">
-					<div id="scrollingmessages">
-						<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Ok</div>
-						<div class="message mymessage">Let me know if you think I should start recording or share with the group</div>
-						<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Mobile Activist: Yes</div>
-						<div class="message mymessage">Are you at the scene?</div>
-						<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Mobile Activist: Ok</div>
-						<div class="message mymessage">Let me know if you think I should start recording or share with the group</div>
-						<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Mobile Activist: Yes</div>
-						<div class="message mymessage">Are you at the scene?</div>
-					</div>
-					<div id="send_div">
-						<input type="text" id="thetext">
-						<button id="sendbutton" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">Send</button>					
+				<div class="grid_8 nomargin">
+					<div id="messages">
+						<div id="scrollingmessages">
+							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Ok</div>
+							<div class="message mymessage">Let me know if you think I should start recording or share with the group</div>
+							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Yes</div>
+							<div class="message mymessage">Are you at the scene?</div>
+							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Ok</div>
+							<div class="message mymessage">Let me know if you think I should start recording or share with the group</div>
+							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Yes</div>
+							<div class="message mymessage">Are you at the scene?</div>
+						</div>
+						<div id="send_div">
+							<input type="text" id="thetext">
+							<button id="sendbutton" onclick="sendmessage(document.getElementById('thetext').value); document.getElementById('thetext').value=''">Send</button>					
+						</div>
 					</div>
 				</div>
+				<div class="grid_4 nomargin">
+					<div id="smallvideo_div">
+						<video id="myvideo" width="100%" muted autoplay>
+						</video>
+					</div>				
+				</div>    
+	<!-- 
+				<div class="grid_12 nomargin">
+						<div id="description" class="whitemessage">
+						<p>Distant Witness is an open source platform which connects an individual mobile "CopWatch" activist via real-time video with a remote partner.</p>
+						<p>Features:
+							<ul>
+								<li>Live video recorded on the mobile device and the network.</li>	
+								<li>Location tracking of mobile activist</li>
+								<li>Live two way audio and video link</li>
+								<li>Real-time text messaging capabilities</li>
+							</ul>
+						These features support the "CopWatch" activist by providing the ability to receive live <b>guidance</b>, increasing <b>leverage</b> increased through the live remote witness, and offering the ability for <b>immediate assistance</b> or <b>amplification</b> should something go wrong.
+						</p>
+					</div>
+				</div>
+	 -->
 			</div>
-			<div class="grid_4 nomargin">
-				<div id="smallvideo_div">
-					<video id="myvideo" width="100%" muted autoplay>
-					</video>
-				</div>				
-			</div>    
-		</div>
 		</div>
 	</body>
 
