@@ -4,8 +4,21 @@
 		<script type="text/javascript" src="socket.io.js"></script>
 
 		<script type="text/javascript">
-			var cannedVideo = "";
+			var ovideoElement;
+
+			var cannedVideo = "makepresenceknown.mp4";
 		
+			function init() {
+				ovideoElement = document.getElementById('othervideo');	
+				ovideoElement.src = cannedVideo;			
+				ovideoElement.addEventListener('ended', function () {
+				  ovideoElement.load();
+				  ovideoElement.play();
+				});
+			}
+			window.addEventListener('load', init);
+
+
 			const httpsserver = "localhost";
 			const httpsport = 8081;
 
@@ -47,7 +60,7 @@
 
 				var newmessage = document.createElement("div");
 				newmessage.className = "message mymessage";
-				newmessage.innerHTML = message;
+				newmessage.innerHTML = message + '<span style="color: rgb(200,200,200);"> :You</span>';
 				
 				var messages = document.getElementById("scrollingmessages");
 				if (messages.children.length > 0) {
@@ -107,13 +120,15 @@
 						incoming_call.answer(my_stream); 
 						incoming_call.on('stream', function(remoteStream) {  
 
-							var ovideoElement = document.getElementById('othervideo');
+//							var ovideoElement = document.getElementById('othervideo');
 							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
 							ovideoElement.onloadedmetadata = function(e) {
 								//ovideoElement.width = e.target.videoWidth;
 								//ovideoElement.height = e.target.videoHeight;
          					};
-							ovideoElement.play();						
+							ovideoElement.play();
+						
+							//ovideoElement.loop = true;
 						
 // 							var ovideoDiv = document.createElement('div');
 // 							ovideoDiv.setAttribute("id","div_" + incoming_call.peer);
@@ -156,6 +171,10 @@
 		
 						incoming_call.on('close', function() {
 							console.log("incoming_call.on close");  // This is happening when it shouldn't
+//							var ovideoElement = document.getElementById("othervideo");
+							ovideoElement.src = cannedVideo;
+							ovideoElement.play();
+//							ovideoElement.loop = true;
 							// When peer refreshes.. 
 							/*
 							var ovideoElement = document.getElementById(incoming_call.peer);
@@ -170,6 +189,10 @@
 				
 						incoming_call.on('error', function(err) {
 							console.log(err);
+//							var ovideoElement = document.getElementById("othervideo");
+							ovideoElement.src = cannedVideo;
+							ovideoElement.play();						
+//							ovideoElement.loop = true;	
 // 							var ovideoElement = document.getElementById(incoming_call.peer);
 // 							if (ovideoElement != null) {
 // 								ovideoElement.parentElement.removeChild(ovideoElement);
@@ -194,14 +217,14 @@
 				call.on('stream', function(remoteStream) {  
 					console.log("makeCall: call.on stream");
 					
-					var ovideoElement = document.getElementById('othervideo');
+//					var ovideoElement = document.getElementById('othervideo');
 					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
 					ovideoElement.onloadedmetadata = function(e) {
 						//ovideoElement.width = e.target.videoWidth;
 						//ovideoElement.height = e.target.videoHeight;
 					};
 					ovideoElement.play();
-										
+//					ovideoElement.loop = true;
 // 					var ovideoDiv = document.createElement('div');
 // 					ovideoDiv.setAttribute("id","div_" + call.peer);
 // 					ovideoDiv.className = "columns six remotevideodiv";
@@ -244,6 +267,7 @@
 		
 				call.on('close', function() {
 					console.log("call.on close");
+
 // 					var ovideoElement = document.getElementById(call.peer);
 // 					ovideoElement.parentElement.removeChild(ovideoElement);
 // 					
@@ -252,26 +276,27 @@
 // 						ovideoDiv.parentElement.removeChild(ovideoDiv);
 // 					}
 
-					var ovideoElement = document.getElementById('othervideo');
+//					var ovideoElement = document.getElementById('othervideo');
 					ovideoElement.src = cannedVideo;
 					ovideoElement.onloadedmetadata = function(e) {
 						//ovideoElement.width = e.target.videoWidth;
 						//ovideoElement.height = e.target.videoHeight;
 					};
 					ovideoElement.play();
+//					ovideoElement.loop = true;
 				});
 				
 				call.on('error', function(err) {
 					console.log(err);
 					
-					var ovideoElement = document.getElementById('othervideo');
+//					var ovideoElement = document.getElementById('othervideo');
 					ovideoElement.src = cannedVideo;
 					ovideoElement.onloadedmetadata = function(e) {
 						//ovideoElement.width = e.target.videoWidth;
 						//ovideoElement.height = e.target.videoHeight;
 					};
 					ovideoElement.play();
-
+//					ovideoElement.loop = true;
 					
 // 					var ovideoElement = document.getElementById(call.peer);
 // 					if (ovideoElement != null) {
@@ -335,6 +360,7 @@
 		<link rel="stylesheet" type="text/css" href="960.css"> 
 		<style>
 			body {
+				background-image: url("stopandfrisk.jpg");
 				background-color: rgb(66,66,66);
 			}			
 			
@@ -387,13 +413,13 @@
 			}	
                         
 			.whitemessage {
-                                padding: 5px 5px 5px 5px;
-                                margin: 5px 5px 5px 5px;
-                                font-family: sans-serif;
-                                font-size: 20px;
+				padding: 5px 5px 5px 5px;
+				margin: 5px 5px 5px 5px;
+				font-family: sans-serif;
+				font-size: 20px;
 				color: rgb(0,0,0);
-                                background-color: rgb(128,128,128);
-                        }
+				background-color: rgb(128,128,128);
+			}
 						
 			.remotemessage {
 			}
@@ -460,7 +486,7 @@
 				</div>
 				<div class="grid_8 nomargin">
 					<div id="fullvideo_div">
-						<video id="othervideo" width="100%" muted autoplay>
+						<video id="othervideo" src="makepresenceknown.mp4" width="100%" muted autoplay>
 							<!-- Canned Video?? -->
 						</video>
 					</div>
@@ -475,13 +501,13 @@
 					<div id="messages">
 						<div id="scrollingmessages">
 							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Ok</div>
-							<div class="message mymessage">Let me know if you think I should start recording or share with the group</div>
+							<div class="message mymessage">Let me know if you think I should start recording or share with the group <span style="color: rgb(200,200,200);">:You</span></div>
 							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Yes</div>
-							<div class="message mymessage">Are you at the scene?</div>
+							<div class="message mymessage">Are you at the scene?<span style="color: rgb(200,200,200);"> :You</span></div>
 							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Ok</div>
-							<div class="message mymessage">Let me know if you think I should start recording or share with the group</div>
+							<div class="message mymessage">Let me know if you think I should start recording or share with the group<span style="color: rgb(200,200,200);"> :You</span></div>
 							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Yes</div>
-							<div class="message mymessage">Are you at the scene?</div>
+							<div class="message mymessage">Are you at the scene?<span style="color: rgb(200,200,200);"> :You</span></div>
 						</div>
 						<div id="send_div">
 							<input type="text" id="thetext">

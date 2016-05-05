@@ -73,21 +73,32 @@ app.on('activate', function () {
 
 	var httpsServer = https.createServer(options, requestHandler);
 	httpsServer.listen(httpsport);
+	console.log("HTTPS server listening on port: " + httpsport);
 
 	var httpServer = http.createServer(function(req, res) {
 		res.writeHead(301, {'Location': 'https://' + req.headers['host'] + ":" + req.port + req.url});
 		res.end();
 	});
 	httpServer.listen(httpport);
-
+	console.log("HTTP server listening on port: " + httpport);
+	
 	function requestHandler(req, res) {
 
 		var parsedUrl = url.parse(req.url);
-		//console.log("The Request is: " + parsedUrl.pathname);
+		console.log("The Request is: " + parsedUrl.pathname);
+	
+		var dirname = __dirname;
+	
+		// For requests to mobile pages
+		if (parsedUrl.pathname.indexOf("/mobile_witness/") == 0) {
+			dirname = dirname + "../";
+		}
+	
+		console.log("dirname: " + dirname); 
 	
 		// Read in the file they requested
 	
-		fs.readFile(__dirname + parsedUrl.pathname, 
+		fs.readFile(dirname + parsedUrl.pathname, 
 			// Callback function for reading
 			function (err, data) {
 				// if there is an error
