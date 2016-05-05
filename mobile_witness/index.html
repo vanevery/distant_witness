@@ -148,7 +148,7 @@
 
 			var peer;
 
-			var mediaConstraints = { audio: true, video: true};
+			var mediaConstraints = { audio: true, video: { width: 640, height: 480, facingMode: "environment" }};
 				//{ width: 640, height: 480, facingMode: "environment" }
 
 			if (navigator.webkitGetUserMedia) {

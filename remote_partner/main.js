@@ -91,7 +91,7 @@ app.on('activate', function () {
 	
 		// For requests to mobile pages
 		if (parsedUrl.pathname.indexOf("/mobile_witness/") == 0) {
-			dirname = dirname + "../";
+			dirname = dirname + "/..";
 		}
 	
 		console.log("dirname: " + dirname); 
