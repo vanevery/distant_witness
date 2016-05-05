@@ -104,8 +104,20 @@
 
 			console.log(landscapeOrPortrait);
 			
+
+//startSimulation and pauseSimulation defined elsewhere
+function handleVisibilityChange() {
+  if (document.hidden) {
+    window.close();
+  } else  {
+    
+  }
+}
+
+document.addEventListener("visibilitychange", handleVisibilityChange, false);			
+			
 			//var socket = io.connect("https://192.168.0.100:8081/");
-			var socket = io.connect();
+			var socket = io.connect("https://192.168.43.152:8081/");
 
 			socket.on('connect', function() {
 				console.log("Socket Connected");
@@ -166,7 +178,7 @@
 					videoElement.play();
 
 					//peer = new Peer({host: '192.168.0.100', port: 9000, path: '/'});
-					peer = new Peer({host: 'localhost', port: 9000, path: '/', secure: true});
+					peer = new Peer({host: '192.168.43.152', port: 9000, path: '/', secure: true});
 
 					peer.on('open', function(id) {
 						peer_id = id;
