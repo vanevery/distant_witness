@@ -74,6 +74,15 @@
 		<script type="text/javascript" src="socket.io.js"></script>
 
 		<script type="text/javascript">
+
+			function sendPanic() {
+				socket.emit('panic',"");
+			}
+			
+			function sendMessage(message) {
+				socket.emit('chatmessage', message);
+			}
+					
 		document.addEventListener('DOMContentLoaded', function() {
 
 			var landscapeOrPortrait = "landscape";
@@ -116,8 +125,8 @@ function handleVisibilityChange() {
 
 document.addEventListener("visibilitychange", handleVisibilityChange, false);			
 			
-			//var socket = io.connect("https://192.168.0.100:8081/");
-			var socket = io.connect("https://192.168.43.152:8081/");
+			var socket = io.connect("https://192.168.0.100:8081/");
+			//var socket = io.connect("https://192.168.43.152:8081/");
 
 			socket.on('connect', function() {
 				console.log("Socket Connected");
@@ -145,13 +154,7 @@ document.addEventListener("visibilitychange", handleVisibilityChange, false);
 				makeCall(data);
 			});
 			
-			function sendPanic() {
-				socket.emit('panic',"");
-			}
-			
-			function sendMessage(message) {
-				socket.emit('chatmessage', message);
-			};
+
 
 			/* Get User Media */
 			var my_stream = null;
@@ -160,10 +163,24 @@ document.addEventListener("visibilitychange", handleVisibilityChange, false);
 
 			var peer;
 
-			var mediaConstraints = { audio: true, video: { width: 640, height: 480, facingMode: "environment" }};
+			var mediaConstraints = { audio: false, video: { width: 640, height: 480, optional: [{sourceId: "835acea08d27ea4ae22fbe97aaf8fb554e4cb0b7d106a77e9407cd87ed1175a6"}] }};
 				//{ width: 640, height: 480, facingMode: "environment" }
 
 			if (navigator.webkitGetUserMedia) {
+
+function gotSources(sourceInfos) {
+  for (var i = 0; i !== sourceInfos.length; ++i) {
+    var sourceInfo = sourceInfos[i];    
+
+    if (sourceInfo.kind === 'video') {
+      console.log(sourceInfo.id + " " + sourceInfo.label);
+    } else {
+      console.log('Some other kind of source: ', sourceInfo);
+    }
+  }
+}
+			MediaStreamTrack.getSources(gotSources);
+			
 				console.log("navigator.mediaDevices.getUserMedia");
 				navigator.webkitGetUserMedia(mediaConstraints, function(stream) {
 					
@@ -176,9 +193,10 @@ document.addEventListener("visibilitychange", handleVisibilityChange, false);
 						//videoElement.height = e.target.videoHeight;
 					};					
 					videoElement.play();
+					videoElement.volume = 0;
 
-					//peer = new Peer({host: '192.168.0.100', port: 9000, path: '/'});
-					peer = new Peer({host: '192.168.43.152', port: 9000, path: '/', secure: true});
+					peer = new Peer({host: '192.168.0.100', port: 9000, path: '/', secure: true});
+					//peer = new Peer({host: '192.168.43.152', port: 9000, path: '/', secure: true});
 
 					peer.on('open', function(id) {
 						peer_id = id;
@@ -204,6 +222,7 @@ document.addEventListener("visibilitychange", handleVisibilityChange, false);
 								//ovideoElement.height = e.target.videoHeight;
          					};
 							ovideoElement.play();
+							ovideoElement.volume = 0;
 
 							//var ovideoElement = document.createElement('video');
 							//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
@@ -252,6 +271,7 @@ document.addEventListener("visibilitychange", handleVisibilityChange, false);
 						//ovideoElement.height = e.target.videoHeight;
 					};
 					ovideoElement.play();
+					ovideoElement.volume = 0;
 
 					//var ovideoElement = document.createElement('video');
 					//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;

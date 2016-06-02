@@ -5,8 +5,6 @@
 
 		<script type="text/javascript">
 			var ovideoElement;
-
-			var cannedVideo = "surveillance640.mp4";
 		
 			function init() {
 				ovideoElement = document.getElementById('othervideo');	
@@ -19,12 +17,12 @@
 			window.addEventListener('load', init);
 
 
-			const httpsserver = "localhost";
-			const httpsport = 8081;
+			const httpsserver = "liveweb.itp.io";
+			const httpsport = 443;
 
 			var connectedcalls = [];
 
-			var socket = io.connect("https://localhost:"+httpsport);
+			var socket = io.connect("https://"+httpsserver+":"+httpsport);
 			
 			socket.on('connect', function() {
 				socket.emit('type','director');
@@ -53,7 +51,7 @@
 			
 			socket.on('location', function(data) {
 				console.log("socket on location");
-// 				addMoveMarker(socket.id, data.lat, data.lng);
+ 				addMoveMarker(socket.id, data.lat, data.lng);
 			});
 			
 			function sendmessage(message) {
