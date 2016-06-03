@@ -183,6 +183,7 @@
 							  if (sourceInfos[i].facing == "environment") {
 							  	sourceId = sourceInfos[i].id;
 							  	mediaConstraints.video.optional = [];
+							  	mediaConstraints.video.optional[0] = {};
 							  	mediaConstraints.video.optional[0].sourceId = sourceId;
 							  	break;
 							  }	
