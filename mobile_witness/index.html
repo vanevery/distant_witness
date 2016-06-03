@@ -157,7 +157,7 @@
 
 				var peer;
 				
-				var videoSources = null;
+				var videoSources = [];
 
 				navigator.getUserMedia = navigator.getUserMedia || 
 					navigator.mozGetUserMedia || 
@@ -167,99 +167,108 @@
 				var mediaConstraints = { audio: false, video: { width: 640, height: 480} };
 					//{ width: 640, height: 480, facingMode: "environment" }
 				
+				
+				
 				if (navigator.getUserMedia) {
 					console.log("getUserMedia is true");
 
-					MediaStreamTrack.getSources(function(sourceInfos) {
-						for (var i = 0; i !== sourceInfos.length; ++i) {
-							var sourceInfo = sourceInfos[i];    
+					var sourceId = null;
 
-							if (sourceInfo.kind === 'video') {
-							  console.log(sourceInfo);
-							  videoSources.push(sourceInfo);
+					MediaStreamTrack.getSources(function(sourceInfos) {
+						for (var i = 0; i < sourceInfos.length; i++) {
+							if (sourceInfos[i].kind === 'video') {
+							  console.log(sourceInfos[i]);
+							  videoSources.push(sourceInfos[i]);
+							  
+							  if (sourceInfos[i].facing == "environment") {
+							  	sourceId = sourceInfos[i].id;
+							  	mediaConstraints.video.optional = [];
+							  	mediaConstraints.video.optional[0].sourceId = sourceId;
+							  	break;
+							  }	
 							}
 						}			
-					});
 			
-					console.log("navigator.mediaDevices.getUserMedia");
-					navigator.getUserMedia(mediaConstraints, function(stream) {
+						console.log("navigator.mediaDevices.getUserMedia");
+						navigator.getUserMedia(mediaConstraints, function(stream) {
 					
-						my_stream = stream;
-						var videoElement = document.getElementById('myvideo');
-						videoElement.src = window.URL.createObjectURL(stream) || stream;
-						videoElement.onloadedmetadata = function(e) {
-							//console.log(e);
-							///videoElement.width = e.target.videoWidth;
-							//videoElement.height = e.target.videoHeight;
-						};					
-						videoElement.play();
-						videoElement.volume = 0;
+							my_stream = stream;
+							var videoElement = document.getElementById('myvideo');
+							videoElement.src = window.URL.createObjectURL(stream) || stream;
+							videoElement.onloadedmetadata = function(e) {
+								//console.log(e);
+								///videoElement.width = e.target.videoWidth;
+								//videoElement.height = e.target.videoHeight;
+							};					
+							videoElement.play();
+							videoElement.volume = 0;
 
-						peer = new Peer({host: peerserver, port: peerserverport, path: '/', secure: true});
+							peer = new Peer({host: peerserver, port: peerserverport, path: '/', secure: true});
 
-						peer.on('open', function(id) {
-							peer_id = id;
-							console.log("peer id: " + peer_id);
+							peer.on('open', function(id) {
+								peer_id = id;
+								console.log("peer id: " + peer_id);
 						
-							if (socket != null) {						  
-							  socket.emit('peerid', peer_id);
-							}
-						});		
+								if (socket != null) {						  
+								  socket.emit('peerid', peer_id);
+								}
+							});		
 					
-						peer.on('error', function(error) {
-							console.log(error);
-						});
-
-						peer.on('call', function(incoming_call) {
-							console.log("Got a call!");
-							incoming_call.answer(my_stream); 						
-							incoming_call.on('stream', function(remoteStream) { 
-								var ovideoElement = document.getElementById('othervideo');
-								ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-								ovideoElement.onloadedmetadata = function(e) {
-									//ovideoElement.width = e.target.videoWidth;
-									//ovideoElement.height = e.target.videoHeight;
-								};
-								ovideoElement.play();
-								ovideoElement.volume = 0;
-
-								//var ovideoElement = document.createElement('video');
-								//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-								//ovideoElement.setAttribute("autoplay", "true");	
-								//ovideoElement.setAttribute("id", incoming_call.peer);
-								//ovideoElement.setAttribute("controls", "controls");	
-								//ovideoElement.play();
-								////document.body.appendChild(ovideoElement);
-								//document.getElementById('othervideo').appendChild(ovideoElement);
+							peer.on('error', function(error) {
+								console.log(error);
 							});
+
+							peer.on('call', function(incoming_call) {
+								console.log("Got a call!");
+								incoming_call.answer(my_stream); 						
+								incoming_call.on('stream', function(remoteStream) { 
+									var ovideoElement = document.getElementById('othervideo');
+									ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+									ovideoElement.onloadedmetadata = function(e) {
+										//ovideoElement.width = e.target.videoWidth;
+										//ovideoElement.height = e.target.videoHeight;
+									};
+									ovideoElement.play();
+									ovideoElement.volume = 0;
+
+									//var ovideoElement = document.createElement('video');
+									//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+									//ovideoElement.setAttribute("autoplay", "true");	
+									//ovideoElement.setAttribute("id", incoming_call.peer);
+									//ovideoElement.setAttribute("controls", "controls");	
+									//ovideoElement.play();
+									////document.body.appendChild(ovideoElement);
+									//document.getElementById('othervideo').appendChild(ovideoElement);
+								});
 						
-							incoming_call.on('close', function() {
-								var ovideoElement = document.getElementById('othervideo');
-								ovideoElement.src = null;
+								incoming_call.on('close', function() {
+									var ovideoElement = document.getElementById('othervideo');
+									ovideoElement.src = null;
 						
-								//var ovideoElement = document.getElementById(incoming_call.peer);
-								//ovideoElement.parentElement.removeChild(ovideoElement);
-							});
+									//var ovideoElement = document.getElementById(incoming_call.peer);
+									//ovideoElement.parentElement.removeChild(ovideoElement);
+								});
 						
-							incoming_call.on('error', function(err) {
-								console.log(err);
-								var ovideoElement = document.getElementById('othervideo');
-								ovideoElement.src = null;	
+								incoming_call.on('error', function(err) {
+									console.log(err);
+									var ovideoElement = document.getElementById('othervideo');
+									ovideoElement.src = null;	
 							
-								//var ovideoElement = document.getElementById(incoming_call.peer);
-								//if (ovideoElement != null) {
-								//	ovideoElement.parentElement.removeChild(ovideoElement);
-								//}
-							}); //incoming_call.on('error
+									//var ovideoElement = document.getElementById(incoming_call.peer);
+									//if (ovideoElement != null) {
+									//	ovideoElement.parentElement.removeChild(ovideoElement);
+									//}
+								}); //incoming_call.on('error
 						
-						}); //peer.on('call')
-					},
-					function (err) {
-					  console.log(err);
-					  console.log(err.message);
-					});
+							}); //peer.on('call')
+						},
+						function (err) {
+						  console.log(err);
+						  console.log(err.message);
+						});				
+					}); // Sources
 				}// if (getusermedia)
-
+				
 				function makeCall(peeridtocall) {
 					var call = peer.call(peeridtocall,my_stream);
 					call.on('stream', function(remoteStream) {  
