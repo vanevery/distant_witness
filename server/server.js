@@ -1,6 +1,6 @@
 	// HTTP Portion
-	var httpport = 80;
-	var httpsport = 443;
+	const httpport = 80;
+	const httpsport = 443;
 	
 	var http = require('http');
 	var https = require('https');
@@ -230,7 +230,7 @@ var fs = require('fs');
 var PeerServer = require('peer').PeerServer;
 
 var server = PeerServer({
-  port: 9000,
+  port: 10000,
   ssl: {
     key: fs.readFileSync('my-key.pem'),
     cert: fs.readFileSync('my-cert.pem')

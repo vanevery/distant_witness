@@ -70,257 +70,256 @@
 			
 		</style>
 		
-		<script src="peer.min.js"></script>		
+		<script type="text/javascript" src="peer.min.js"></script>		
 		<script type="text/javascript" src="socket.io.js"></script>
 
 		<script type="text/javascript">
+			const peerserver = "liveweb.itp.io";
+			const peerserverport = 10000;
+			const socketserver = "https://liveweb.itp.io:443/";
+
+			var socket = null;
 
 			function sendPanic() {
-				socket.emit('panic',"");
+				if (socket != null) {
+					socket.emit('panic',"");
+				}
 			}
 			
 			function sendMessage(message) {
-				socket.emit('chatmessage', message);
+				if (socket != null) {
+					socket.emit('chatmessage', message);
+				}
 			}
 					
-		document.addEventListener('DOMContentLoaded', function() {
+			document.addEventListener('DOMContentLoaded', function() {
 
-			var landscapeOrPortrait = "landscape";
-			
-			if (navigator.webkitGetUserMedia) {
-				console.log("navigator.webkitGetUserMedia");
-			} else {
-				console.log("navigator.webkitGetUserMedia is false");
-			}
-			
-			if (navigator.mediaDevices.getUserMedia) {
-				console.log("navigator.mediaDevices.getUserMedia");
-			} else {
-				console.log("navigator.mediaDevices.getUserMedia is false");
-			}
-									
-			if (window.innerHeight > window.innerWidth){
-				landscapeOrPortrait = "portrait";
-			}
+				var landscapeOrPortrait = "landscape";
+												
+				if (window.innerHeight > window.innerWidth){
+					landscapeOrPortrait = "portrait";
+				}
 							
-			if (landscapeOrPortrait == "landscape") {
-//					document.getElementById('myvideo').width=null;
-				document.getElementById('myvideo').height=window.innerHeight;
-			} else {
-				document.getElementById('myvideo').width=window.innerWidth;
-//					document.getElementById('myvideo').height=null;
-			}
+				if (landscapeOrPortrait == "landscape") {
+	//					document.getElementById('myvideo').width=null;
+					document.getElementById('myvideo').height=window.innerHeight;
+				} else {
+					document.getElementById('myvideo').width=window.innerWidth;
+	//					document.getElementById('myvideo').height=null;
+				}
 
-			console.log(landscapeOrPortrait);
+				console.log(landscapeOrPortrait);
 			
+				function handleVisibilityChange() {
+				  if (document.hidden) {
+					window.close();
+				  } else  {
+	
+				  }
+				}
 
-//startSimulation and pauseSimulation defined elsewhere
-function handleVisibilityChange() {
-  if (document.hidden) {
-    window.close();
-  } else  {
-    
-  }
-}
-
-document.addEventListener("visibilitychange", handleVisibilityChange, false);			
+				document.addEventListener("visibilitychange", handleVisibilityChange, false);			
 			
-			var socket = io.connect("https://192.168.0.100:8081/");
-			//var socket = io.connect("https://192.168.43.152:8081/");
+				socket = io.connect(socketserver);
 
-			socket.on('connect', function() {
-				console.log("Socket Connected");
-				socket.emit('type','mobile');
-				if (peer_id != null) {
-					socket.emit('peerid',peer_id);
+				socket.on('connect', function() {
+					console.log("Socket Connected");
+					socket.emit('type','mobile');
+					if (peer_id != null) {
+						console.log("emitting peerid " + peer_id);
+						socket.emit('peerid',peer_id);
+					}				
+				});
+
+				socket.on('chatmessage', function (data) {
+					var newmessage = document.createElement("div");
+					newmessage.className = "message";
+					newmessage.innerHTML = data;
+				
+					var messages = document.getElementById("messages");
+					if (messages.children.length > 0) {
+						messages.insertBefore(newmessage, messages.children[0]);
+					} else {
+						messages.appendChild(newmessage);
+					}
+					//document.getElementById("messages").innerHTML = data + "<br />\n" + document.getElementById("messages").innerHTML;
+				});
+
+				socket.on('peerid', function(data) {
+					console.log("receiving peerid " + data);
+					makeCall(data);
+				});
+
+				/* Get User Media */
+				var my_stream = null;
+
+				var peer_id = null;
+
+				var peer;
+				
+				var videoSources = null;
+
+				navigator.getUserMedia = navigator.getUserMedia || 
+					navigator.mozGetUserMedia || 
+					navigator.webkitGetUserMedia;
+	
+				//var mediaConstraints = { audio: false, video: { width: 640, height: 480, optional: [{sourceId: "835acea08d27ea4ae22fbe97aaf8fb554e4cb0b7d106a77e9407cd87ed1175a6"}] }};
+				var mediaConstraints = { audio: false, video: { width: 640, height: 480} };
+					//{ width: 640, height: 480, facingMode: "environment" }
+				
+				if (navigator.getUserMedia) {
+					console.log("getUserMedia is true");
+
+					MediaStreamTrack.getSources(function(sourceInfos) {
+						for (var i = 0; i !== sourceInfos.length; ++i) {
+							var sourceInfo = sourceInfos[i];    
+
+							if (sourceInfo.kind === 'video') {
+							  console.log(sourceInfo);
+							  videoSources.push(sourceInfo);
+							}
+						}			
+					});
+			
+					console.log("navigator.mediaDevices.getUserMedia");
+					navigator.getUserMedia(mediaConstraints, function(stream) {
+					
+						my_stream = stream;
+						var videoElement = document.getElementById('myvideo');
+						videoElement.src = window.URL.createObjectURL(stream) || stream;
+						videoElement.onloadedmetadata = function(e) {
+							//console.log(e);
+							///videoElement.width = e.target.videoWidth;
+							//videoElement.height = e.target.videoHeight;
+						};					
+						videoElement.play();
+						videoElement.volume = 0;
+
+						peer = new Peer({host: peerserver, port: peerserverport, path: '/', secure: true});
+
+						peer.on('open', function(id) {
+							peer_id = id;
+							console.log("peer id: " + peer_id);
+						
+							if (socket != null) {						  
+							  socket.emit('peerid', peer_id);
+							}
+						});		
+					
+						peer.on('error', function(error) {
+							console.log(error);
+						});
+
+						peer.on('call', function(incoming_call) {
+							console.log("Got a call!");
+							incoming_call.answer(my_stream); 						
+							incoming_call.on('stream', function(remoteStream) { 
+								var ovideoElement = document.getElementById('othervideo');
+								ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+								ovideoElement.onloadedmetadata = function(e) {
+									//ovideoElement.width = e.target.videoWidth;
+									//ovideoElement.height = e.target.videoHeight;
+								};
+								ovideoElement.play();
+								ovideoElement.volume = 0;
+
+								//var ovideoElement = document.createElement('video');
+								//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+								//ovideoElement.setAttribute("autoplay", "true");	
+								//ovideoElement.setAttribute("id", incoming_call.peer);
+								//ovideoElement.setAttribute("controls", "controls");	
+								//ovideoElement.play();
+								////document.body.appendChild(ovideoElement);
+								//document.getElementById('othervideo').appendChild(ovideoElement);
+							});
+						
+							incoming_call.on('close', function() {
+								var ovideoElement = document.getElementById('othervideo');
+								ovideoElement.src = null;
+						
+								//var ovideoElement = document.getElementById(incoming_call.peer);
+								//ovideoElement.parentElement.removeChild(ovideoElement);
+							});
+						
+							incoming_call.on('error', function(err) {
+								console.log(err);
+								var ovideoElement = document.getElementById('othervideo');
+								ovideoElement.src = null;	
+							
+								//var ovideoElement = document.getElementById(incoming_call.peer);
+								//if (ovideoElement != null) {
+								//	ovideoElement.parentElement.removeChild(ovideoElement);
+								//}
+							}); //incoming_call.on('error
+						
+						}); //peer.on('call')
+					},
+					function (err) {
+					  console.log(err);
+					  console.log(err.message);
+					});
+				}// if (getusermedia)
+
+				function makeCall(peeridtocall) {
+					var call = peer.call(peeridtocall,my_stream);
+					call.on('stream', function(remoteStream) {  
+						var ovideoElement = document.getElementById('othervideo');
+						ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+						ovideoElement.onloadedmetadata = function(e) {
+							//ovideoElement.width = e.target.videoWidth;
+							//ovideoElement.height = e.target.videoHeight;
+						};
+						ovideoElement.play();
+						ovideoElement.volume = 0;
+
+						//var ovideoElement = document.createElement('video');
+						//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+						//ovideoElement.setAttribute("autoplay", "true");	
+						//ovideoElement.setAttribute("id", call.peer);	
+						//ovideoElement.play();
+						////document.body.appendChild(ovideoElement);					
+						//document.getElementById('othervideo').appendChild(ovideoElement);
+					});	
+						
+					call.on('close', function() {
+						var ovideoElement = document.getElementById('othervideo');
+						ovideoElement.src = null;
+
+						//var ovideoElement = document.getElementById(call.peer);
+						//ovideoElement.parentElement.removeChild(ovideoElement);
+					});
+				
+					call.on('error', function(err) {
+						var ovideoElement = document.getElementById('othervideo');
+						ovideoElement.src = null;
+
+						//var ovideoElement = document.getElementById(call.peer);
+						//if (ovideoElement != null) {
+						//	ovideoElement.parentElement.removeChild(ovideoElement);
+						//}
+					});						
+				}
+
+				if (navigator.geolocation) 
+				{
+					navigator.geolocation.watchPosition(successCallback, errorCallback, {});
+
+					function successCallback(currentPosition) {
+				
+						//var lat = currentPosition.coords.latitude;
+						//var lng = currentPosition.coords.longitude;
+					
+						socket.emit('location', {lat: currentPosition.coords.latitude, lng: currentPosition.coords.longitude});
+					}
+
+					function errorCallback(e) {
+						console.log(e);
+					}
+
+				} else {
+					console.log("Geolocation Not Allowed");
 				}				
 			});
-
-			socket.on('chatmessage', function (data) {
-				var newmessage = document.createElement("div");
-				newmessage.className = "message";
-				newmessage.innerHTML = data;
-				
-				var messages = document.getElementById("messages");
-				if (messages.children.length > 0) {
-					messages.insertBefore(newmessage, messages.children[0]);
-				} else {
-					messages.appendChild(newmessage);
-				}
-				//document.getElementById("messages").innerHTML = data + "<br />\n" + document.getElementById("messages").innerHTML;
-			});
-
-			socket.on('peerid', function(data) {
-				makeCall(data);
-			});
-			
-
-
-			/* Get User Media */
-			var my_stream = null;
-
-			var peer_id = null;
-
-			var peer;
-
-			var mediaConstraints = { audio: false, video: { width: 640, height: 480, optional: [{sourceId: "835acea08d27ea4ae22fbe97aaf8fb554e4cb0b7d106a77e9407cd87ed1175a6"}] }};
-				//{ width: 640, height: 480, facingMode: "environment" }
-
-			if (navigator.webkitGetUserMedia) {
-
-function gotSources(sourceInfos) {
-  for (var i = 0; i !== sourceInfos.length; ++i) {
-    var sourceInfo = sourceInfos[i];    
-
-    if (sourceInfo.kind === 'video') {
-      console.log(sourceInfo.id + " " + sourceInfo.label);
-    } else {
-      console.log('Some other kind of source: ', sourceInfo);
-    }
-  }
-}
-			MediaStreamTrack.getSources(gotSources);
-			
-				console.log("navigator.mediaDevices.getUserMedia");
-				navigator.webkitGetUserMedia(mediaConstraints, function(stream) {
-					
-					my_stream = stream;
-					var videoElement = document.getElementById('myvideo');
-					videoElement.src = window.URL.createObjectURL(stream) || stream;
-					videoElement.onloadedmetadata = function(e) {
-						//console.log(e);
-						///videoElement.width = e.target.videoWidth;
-						//videoElement.height = e.target.videoHeight;
-					};					
-					videoElement.play();
-					videoElement.volume = 0;
-
-					peer = new Peer({host: '192.168.0.100', port: 9000, path: '/', secure: true});
-					//peer = new Peer({host: '192.168.43.152', port: 9000, path: '/', secure: true});
-
-					peer.on('open', function(id) {
-						peer_id = id;
-						console.log(peer_id);
-						
-						if (socket != null) {						  
-						  socket.emit('peerid', peer_id);
-						}
-					});		
-					
-					peer.on('error', function(error) {
-						console.log(error);
-					});
-
-					peer.on('call', function(incoming_call) {
-						console.log("Got a call!");
-						incoming_call.answer(my_stream); 						
-						incoming_call.on('stream', function(remoteStream) { 
-							var ovideoElement = document.getElementById('othervideo');
-							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-							ovideoElement.onloadedmetadata = function(e) {
-								//ovideoElement.width = e.target.videoWidth;
-								//ovideoElement.height = e.target.videoHeight;
-         					};
-							ovideoElement.play();
-							ovideoElement.volume = 0;
-
-							//var ovideoElement = document.createElement('video');
-							//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-							//ovideoElement.setAttribute("autoplay", "true");	
-							//ovideoElement.setAttribute("id", incoming_call.peer);
-							//ovideoElement.setAttribute("controls", "controls");	
-							//ovideoElement.play();
-							////document.body.appendChild(ovideoElement);
-							//document.getElementById('othervideo').appendChild(ovideoElement);
-						});
-						
-						incoming_call.on('close', function() {
-							var ovideoElement = document.getElementById('othervideo');
-							ovideoElement.src = null;
-						
-							//var ovideoElement = document.getElementById(incoming_call.peer);
-							//ovideoElement.parentElement.removeChild(ovideoElement);
-						});
-						
-						incoming_call.on('error', function(err) {
-							console.log(err);
-							var ovideoElement = document.getElementById('othervideo');
-							ovideoElement.src = null;	
-							
-							//var ovideoElement = document.getElementById(incoming_call.peer);
-							//if (ovideoElement != null) {
-							//	ovideoElement.parentElement.removeChild(ovideoElement);
-							//}
-						}); //incoming_call.on('error
-						
-					}); //peer.on('call')
-				},
-				function (err) {
-				  console.log(err);
-				  console.log(err.message);
-				});
-			}// if (getusermedia)
-
-			function makeCall(peeridtocall) {
-				var call = peer.call(peeridtocall,my_stream);
-				call.on('stream', function(remoteStream) {  
-					var ovideoElement = document.getElementById('othervideo');
-					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-					ovideoElement.onloadedmetadata = function(e) {
-						//ovideoElement.width = e.target.videoWidth;
-						//ovideoElement.height = e.target.videoHeight;
-					};
-					ovideoElement.play();
-					ovideoElement.volume = 0;
-
-					//var ovideoElement = document.createElement('video');
-					//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-					//ovideoElement.setAttribute("autoplay", "true");	
-					//ovideoElement.setAttribute("id", call.peer);	
-					//ovideoElement.play();
-					////document.body.appendChild(ovideoElement);					
-					//document.getElementById('othervideo').appendChild(ovideoElement);
-				});	
-						
-				call.on('close', function() {
-					var ovideoElement = document.getElementById('othervideo');
-					ovideoElement.src = null;
-
-					//var ovideoElement = document.getElementById(call.peer);
-					//ovideoElement.parentElement.removeChild(ovideoElement);
-				});
-				
-				call.on('error', function(err) {
-					var ovideoElement = document.getElementById('othervideo');
-					ovideoElement.src = null;
-
-					//var ovideoElement = document.getElementById(call.peer);
-					//if (ovideoElement != null) {
-					//	ovideoElement.parentElement.removeChild(ovideoElement);
-					//}
-				});						
-			}
-
-			if (navigator.geolocation) 
-			{
-				navigator.geolocation.watchPosition(successCallback, errorCallback, {});
-
-				function successCallback(currentPosition) {
-				
-					//var lat = currentPosition.coords.latitude;
-					//var lng = currentPosition.coords.longitude;
-					
-					socket.emit('location', {lat: currentPosition.coords.latitude, lng: currentPosition.coords.longitude});
- 				}
-
-				function errorCallback(e) {
-					console.log(e);
-				}
-
-			} else {
-				console.log("Geolocation Not Allowed");
-			}				
-		});
 		</script>
 	</head>
 	<body>

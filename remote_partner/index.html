@@ -2,356 +2,356 @@
 	<head>
 		<script type="text/javascript" src="peer.min.js"></script>	
 		<script type="text/javascript" src="socket.io.js"></script>
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAGE3faVAYtFxrVWtxKWXklXksPVaXXw6E&callback=initMap" async defer></script>
 
 		<script type="text/javascript">
+			const httpsserver = "liveweb.itp.io";
+			const httpsport = 443;
+			const peerserver = "liveweb.itp.io";
+			const peerserverport = 10000;
+
 			var ovideoElement;
+			var socket;
+			var connectedcalls = [];
 		
 			function init() {
 				ovideoElement = document.getElementById('othervideo');	
-				ovideoElement.src = cannedVideo;			
-				ovideoElement.addEventListener('ended', function () {
-				  ovideoElement.load();
-				  ovideoElement.play();
+// 				ovideoElement.addEventListener('ended', function () {
+// 				  ovideoElement.load();
+// 				  ovideoElement.play();
+// 				});
+
+				socket = io.connect("https://"+httpsserver+":"+httpsport);
+			
+				socket.on('connect', function() {
+					socket.emit('type','director');
+					if (peer_id != null) {
+						socket.emit('peerid',peer_id);
+					}	
 				});
+
+				socket.on('chatmessage', function (data) {
+					var newmessage = document.createElement("div");
+					newmessage.className = "message remotemessage";
+					newmessage.innerHTML = '<span style="color: rgb(200,200,200);">Mobile:</span> ' + data;
+				
+					var messages = document.getElementById("scrollingmessages");
+					if (messages.children.length > 0) {
+						messages.insertBefore(newmessage, messages.children[0]);
+					} else {
+						messages.appendChild(newmessage);
+					}
+				});
+
+				socket.on('peerid', function(data) {
+					console.log("socket on peerid");
+					makeCall(data);
+				});
+			
+				socket.on('location', function(data) {
+					console.log("socket on location");
+					addMoveMarker(socket.id, data.lat, data.lng);
+				});
+						
+				function sendModeratedMessage(message) {
+					socket.emit('moderatedchatmessage', message);
+				}
+			
+				function sendPeerIdConnect(peerid) {
+					socket.emit('peerid_connect', peerid);			
+				}
+			
+				function sendPeerIdDisconnect(peerid) {
+					socket.emit('peerid_disconnect', peerid);
+				}
+
+				/* Get User Media */
+				var my_stream = null;
+
+				var peer_id = null;
+
+				var peer;
+
+				window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+				navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+				if (navigator.getUserMedia) {
+					navigator.getUserMedia({video: true, audio: true}, function(stream) {
+						my_stream = stream;
+						var videoElement = document.getElementById('myvideo');
+						videoElement.src = window.URL.createObjectURL(stream) || stream;
+						videoElement.play();
+
+	// 					var otherVideoElement = document.getElementById('othervideo');
+	// 					otherVideoElement.src = window.URL.createObjectURL(stream) || stream;
+	// 					otherVideoElement.play();
+	// 
+
+						peer = new Peer({host: peerserver, port: peerserverport, path: '/', secure: true});
+
+						// Get an ID from the PeerJS server		
+						peer.on('open', function(id) {
+						  peer_id = id;
+							if (socket != null) {						  
+							  socket.emit('peerid', peer_id);
+							}					
+						});		
+
+						peer.on('call', function(incoming_call) {
+							console.log("peer.on call");
+							incoming_call.answer(my_stream); 
+							incoming_call.on('stream', function(remoteStream) {  
+
+	//							var ovideoElement = document.getElementById('othervideo');
+								ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+								ovideoElement.onloadedmetadata = function(e) {
+									//ovideoElement.width = e.target.videoWidth;
+									//ovideoElement.height = e.target.videoHeight;
+								};
+								ovideoElement.play();
+						
+								//ovideoElement.loop = true;
+						
+	// 							var ovideoDiv = document.createElement('div');
+	// 							ovideoDiv.setAttribute("id","div_" + incoming_call.peer);
+	// 							ovideoDiv.className = "columns six remotevideodiv";
+	// 							document.getElementById('mobilevideos').appendChild(ovideoDiv);
+	// 						
+	// 							var ovideoElement = document.createElement('video');
+	// 							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+	// 							ovideoElement.setAttribute("autoplay", "true");	
+	// 							ovideoElement.setAttribute("id", incoming_call.peer);	
+	// 							ovideoElement.setAttribute("width", "320");
+	// 							ovideoElement.setAttribute("height", "240");	
+	// 							ovideoElement.setAttribute("controls", "controls");								
+	// 							ovideoElement.play();
+	// 							ovideoElement.addEventListener('click', function() {
+	// 								var connected = false;
+	// 								for (var i = 0; i < connectedcalls.length; i++) 
+	// 								{
+	// 									if (connectedcalls[i] == incoming_call.peer) {
+	// 										connected = true;
+	// 									}
+	// 								}
+	// 								
+	// 								if (!connected) {
+	// 									connectedcalls.push(incoming_call.peer);
+	// 									sendPeerIdConnect(incoming_call.peer); 
+	// 								} else {
+	// 									sendPeerIdDisconnect(incoming_call.peer);
+	// 
+	// 									for (var i = 0; i < connectedcalls.length; i++) {
+	// 										if (connectedcalls[i] == incoming_call.peer) {
+	// 											connectedcalls.splice(i,1);
+	// 										}
+	// 									}																		
+	// 								}
+	// 							});
+	// 
+	// 							ovideoDiv.appendChild(ovideoElement);							
+							});
+		
+							incoming_call.on('close', function() {
+								console.log("incoming_call.on close");  // This is happening when it shouldn't
+	//							var ovideoElement = document.getElementById("othervideo");
+	//							ovideoElement.src = cannedVideo;
+								ovideoElement.play();
+	//							ovideoElement.loop = true;
+								// When peer refreshes.. 
+								/*
+								var ovideoElement = document.getElementById(incoming_call.peer);
+								ovideoElement.parentElement.removeChild(ovideoElement);
+							
+								var ovideoDiv = document.getElementById("div_" + incoming_call.peer);
+								if (ovideoDiv != null) {
+									ovideoDiv.parentElement.removeChild(ovideoDiv);
+								}
+								*/							
+							});
+				
+							incoming_call.on('error', function(err) {
+								console.log(err);
+	//							var ovideoElement = document.getElementById("othervideo");
+	//							ovideoElement.src = cannedVideo;
+								ovideoElement.play();						
+	//							ovideoElement.loop = true;	
+	// 							var ovideoElement = document.getElementById(incoming_call.peer);
+	// 							if (ovideoElement != null) {
+	// 								ovideoElement.parentElement.removeChild(ovideoElement);
+	// 							}
+	// 
+	// 							var ovideoDiv = document.getElementById("div_" + incoming_call.peer);
+	// 							if (ovideoDiv != null) {
+	// 								ovideoDiv.parentElement.removeChild(ovideoDiv);
+	// 							}							
+							});						
+										
+						});
+
+					}, function(err) {
+						console.log('Failed to get local stream' ,err);
+					});
+				}	
+
+				function makeCall(peeridtocall) {
+					console.log("makeCall: " + peeridtocall);
+					var call = peer.call(peeridtocall,my_stream);
+					call.on('stream', function(remoteStream) {  
+						console.log("makeCall: call.on stream");
+					
+	//					var ovideoElement = document.getElementById('othervideo');
+						ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+						ovideoElement.onloadedmetadata = function(e) {
+							//ovideoElement.width = e.target.videoWidth;
+							//ovideoElement.height = e.target.videoHeight;
+						};
+						ovideoElement.play();
+	//					ovideoElement.loop = true;
+	// 					var ovideoDiv = document.createElement('div');
+	// 					ovideoDiv.setAttribute("id","div_" + call.peer);
+	// 					ovideoDiv.className = "columns six remotevideodiv";
+	// 					document.getElementById('mobilevideos').appendChild(ovideoDiv);
+	// 				
+	// 					var ovideoElement = document.createElement('video');
+	// 					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+	// 					ovideoElement.setAttribute("autoplay", "true");	
+	// 					ovideoElement.setAttribute("id", call.peer);
+	// 					ovideoElement.setAttribute("width", "320");
+	// 					ovideoElement.setAttribute("height", "240");
+	// 					ovideoElement.setAttribute("controls", "controls");	
+	// 					ovideoElement.play();
+	// 					ovideoDiv.appendChild(ovideoElement);
+	// 
+	// 					ovideoElement.addEventListener('click', function() {
+	// 						var connected = false;
+	// 						for (var i = 0; i < connectedcalls.length; i++) 
+	// 						{
+	// 							if (connectedcalls[i] == call.peer) {
+	// 								connected = true;
+	// 							}
+	// 						}
+	// 					
+	// 						if (!connected) {
+	// 							connectedcalls.push(call.peer);
+	// 							sendPeerIdConnect(call.peer); 
+	// 						} else {
+	// 							sendPeerIdDisconnect(call.peer);
+	// 
+	// 							for (var i = 0; i < connectedcalls.length; i++) {
+	// 								if (connectedcalls[i] == call.peer) {
+	// 									connectedcalls.splice(i,1);
+	// 								}
+	// 							}																		
+	// 						}
+	// 					});					
+					
+					});		
+		
+					call.on('close', function() {
+						console.log("call.on close");
+
+	// 					var ovideoElement = document.getElementById(call.peer);
+	// 					ovideoElement.parentElement.removeChild(ovideoElement);
+	// 					
+	// 					var ovideoDiv = document.getElementById("div_" + call.peer);
+	// 					if (ovideoDiv != null) {
+	// 						ovideoDiv.parentElement.removeChild(ovideoDiv);
+	// 					}
+
+	//					var ovideoElement = document.getElementById('othervideo');
+	//					ovideoElement.src = cannedVideo;
+						ovideoElement.onloadedmetadata = function(e) {
+							//ovideoElement.width = e.target.videoWidth;
+							//ovideoElement.height = e.target.videoHeight;
+						};
+						ovideoElement.play();
+	//					ovideoElement.loop = true;
+					});
+				
+					call.on('error', function(err) {
+						console.log(err);
+					
+	//					var ovideoElement = document.getElementById('othervideo');
+	//					ovideoElement.src = cannedVideo;
+						ovideoElement.onloadedmetadata = function(e) {
+							//ovideoElement.width = e.target.videoWidth;
+							//ovideoElement.height = e.target.videoHeight;
+						};
+						ovideoElement.play();
+	//					ovideoElement.loop = true;
+					
+	// 					var ovideoElement = document.getElementById(call.peer);
+	// 					if (ovideoElement != null) {
+	// 						ovideoElement.parentElement.removeChild(ovideoElement);
+	// 					}
+	// 					
+	// 					var ovideoDiv = document.getElementById("div_" + call.peer);
+	// 					if (ovideoDiv != null) {
+	// 						ovideoDiv.parentElement.removeChild(ovideoDiv);
+	// 					}
+					});						
+				}
 			}
 			window.addEventListener('load', init);
 
-
-			const httpsserver = "liveweb.itp.io";
-			const httpsport = 443;
-
-			var connectedcalls = [];
-
-			var socket = io.connect("https://"+httpsserver+":"+httpsport);
-			
-			socket.on('connect', function() {
-				socket.emit('type','director');
-				if (peer_id != null) {
-					socket.emit('peerid',peer_id);
-				}	
-			});
-
-			socket.on('chatmessage', function (data) {
-				var newmessage = document.createElement("div");
-				newmessage.className = "message remotemessage";
-				newmessage.innerHTML = '<span style="color: rgb(200,200,200);">Mobile Activist:</span> ' + data;
-				
-				var messages = document.getElementById("scrollingmessages");
-				if (messages.children.length > 0) {
-					messages.insertBefore(newmessage, messages.children[0]);
-				} else {
-					messages.appendChild(newmessage);
-				}
-			});
-
-			socket.on('peerid', function(data) {
-				console.log("socket on peerid");
-				makeCall(data);
-			});
-			
-			socket.on('location', function(data) {
-				console.log("socket on location");
- 				addMoveMarker(socket.id, data.lat, data.lng);
-			});
-			
 			function sendmessage(message) {
 
 				var newmessage = document.createElement("div");
 				newmessage.className = "message mymessage";
 				newmessage.innerHTML = message + '<span style="color: rgb(200,200,200);"> :You</span>';
-				
+			
 				var messages = document.getElementById("scrollingmessages");
 				if (messages.children.length > 0) {
 					messages.insertBefore(newmessage, messages.children[0]);
 				} else {
 					messages.appendChild(newmessage);
 				}			
-			
+		
 				socket.emit('chatmessage', message);
 			};
+
+
+			var map = null;
 			
-			function sendModeratedMessage(message) {
-				socket.emit('moderatedchatmessage', message);
+			function initMap() {
+			  var myLatLng = {lat: 40.69818, lng: -74.02271};
+
+			  // Create a map object and specify the DOM element for display.
+			  map = new google.maps.Map(document.getElementById('map_div'), {
+				center: myLatLng,
+				zoom: 12
+			  });
+
 			}
 			
-			function sendPeerIdConnect(peerid) {
-				socket.emit('peerid_connect', peerid);			
-			}
+			var markers = [];
+			// {id, marker, lat, lng}
 			
-			function sendPeerIdDisconnect(peerid) {
-				socket.emit('peerid_disconnect', peerid);
-			}
-
-			/* Get User Media */
-			var my_stream = null;
-
-			var peer_id = null;
-
-			var peer;
-
-			window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
-			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-			if (navigator.getUserMedia) {
-				navigator.getUserMedia({video: true, audio: true}, function(stream) {
-					my_stream = stream;
-					var videoElement = document.getElementById('myvideo');
-					videoElement.src = window.URL.createObjectURL(stream) || stream;
-					videoElement.play();
-
-// 					var otherVideoElement = document.getElementById('othervideo');
-// 					otherVideoElement.src = window.URL.createObjectURL(stream) || stream;
-// 					otherVideoElement.play();
-// 
-
-					peer = new Peer({host: 'localhost', port: 9000, path: '/', secure: true});
-
-					// Get an ID from the PeerJS server		
-					peer.on('open', function(id) {
-					  peer_id = id;
-						if (socket != null) {						  
-						  socket.emit('peerid', peer_id);
-						}					
-					});		
-
-					peer.on('call', function(incoming_call) {
-						console.log("peer.on call");
-						incoming_call.answer(my_stream); 
-						incoming_call.on('stream', function(remoteStream) {  
-
-//							var ovideoElement = document.getElementById('othervideo');
-							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-							ovideoElement.onloadedmetadata = function(e) {
-								//ovideoElement.width = e.target.videoWidth;
-								//ovideoElement.height = e.target.videoHeight;
-         					};
-							ovideoElement.play();
-						
-							//ovideoElement.loop = true;
-						
-// 							var ovideoDiv = document.createElement('div');
-// 							ovideoDiv.setAttribute("id","div_" + incoming_call.peer);
-// 							ovideoDiv.className = "columns six remotevideodiv";
-// 							document.getElementById('mobilevideos').appendChild(ovideoDiv);
-// 						
-// 							var ovideoElement = document.createElement('video');
-// 							ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-// 							ovideoElement.setAttribute("autoplay", "true");	
-// 							ovideoElement.setAttribute("id", incoming_call.peer);	
-// 							ovideoElement.setAttribute("width", "320");
-// 							ovideoElement.setAttribute("height", "240");	
-// 							ovideoElement.setAttribute("controls", "controls");								
-// 							ovideoElement.play();
-// 							ovideoElement.addEventListener('click', function() {
-// 								var connected = false;
-// 								for (var i = 0; i < connectedcalls.length; i++) 
-// 								{
-// 									if (connectedcalls[i] == incoming_call.peer) {
-// 										connected = true;
-// 									}
-// 								}
-// 								
-// 								if (!connected) {
-// 									connectedcalls.push(incoming_call.peer);
-// 									sendPeerIdConnect(incoming_call.peer); 
-// 								} else {
-// 									sendPeerIdDisconnect(incoming_call.peer);
-// 
-// 									for (var i = 0; i < connectedcalls.length; i++) {
-// 										if (connectedcalls[i] == incoming_call.peer) {
-// 											connectedcalls.splice(i,1);
-// 										}
-// 									}																		
-// 								}
-// 							});
-// 
-// 							ovideoDiv.appendChild(ovideoElement);							
-						});
-		
-						incoming_call.on('close', function() {
-							console.log("incoming_call.on close");  // This is happening when it shouldn't
-//							var ovideoElement = document.getElementById("othervideo");
-							ovideoElement.src = cannedVideo;
-							ovideoElement.play();
-//							ovideoElement.loop = true;
-							// When peer refreshes.. 
-							/*
-							var ovideoElement = document.getElementById(incoming_call.peer);
-							ovideoElement.parentElement.removeChild(ovideoElement);
-							
-							var ovideoDiv = document.getElementById("div_" + incoming_call.peer);
-							if (ovideoDiv != null) {
-								ovideoDiv.parentElement.removeChild(ovideoDiv);
-							}
-							*/							
-						});
+			function addMoveMarker(id, lat, lng) {
+				var found = false;
+				for (var i = 0; i < markers.length; i++) {
+					if (markers[i].id === id) {
+						// Update marker
+						markers[i].marker.setPosition({lat: lat, lng: lng});
+						markers[i].lat = lat;
+						markers[i].lng = lng;
+						found = true;
+						break;
+					}
+				}		
+				if (!found) {
+					// Create a marker and set its position.
+				  	var marker = new google.maps.Marker({
+						map: map,
+						position: {lat: lat, lng: lng},
+						title: 'Mobile'
+				  	});	
+				  	markers.push({id, marker, lat, lng});
+				}	
 				
-						incoming_call.on('error', function(err) {
-							console.log(err);
-//							var ovideoElement = document.getElementById("othervideo");
-							ovideoElement.src = cannedVideo;
-							ovideoElement.play();						
-//							ovideoElement.loop = true;	
-// 							var ovideoElement = document.getElementById(incoming_call.peer);
-// 							if (ovideoElement != null) {
-// 								ovideoElement.parentElement.removeChild(ovideoElement);
-// 							}
-// 
-// 							var ovideoDiv = document.getElementById("div_" + incoming_call.peer);
-// 							if (ovideoDiv != null) {
-// 								ovideoDiv.parentElement.removeChild(ovideoDiv);
-// 							}							
-						});						
-										
-					});
-
-				}, function(err) {
-					console.log('Failed to get local stream' ,err);
-				});
-			}	
-
-			function makeCall(peeridtocall) {
-				console.log("makeCall: " + peeridtocall);
-				var call = peer.call(peeridtocall,my_stream);
-				call.on('stream', function(remoteStream) {  
-					console.log("makeCall: call.on stream");
-					
-//					var ovideoElement = document.getElementById('othervideo');
-					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-					ovideoElement.onloadedmetadata = function(e) {
-						//ovideoElement.width = e.target.videoWidth;
-						//ovideoElement.height = e.target.videoHeight;
-					};
-					ovideoElement.play();
-//					ovideoElement.loop = true;
-// 					var ovideoDiv = document.createElement('div');
-// 					ovideoDiv.setAttribute("id","div_" + call.peer);
-// 					ovideoDiv.className = "columns six remotevideodiv";
-// 					document.getElementById('mobilevideos').appendChild(ovideoDiv);
-// 				
-// 					var ovideoElement = document.createElement('video');
-// 					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-// 					ovideoElement.setAttribute("autoplay", "true");	
-// 					ovideoElement.setAttribute("id", call.peer);
-// 					ovideoElement.setAttribute("width", "320");
-// 					ovideoElement.setAttribute("height", "240");
-// 					ovideoElement.setAttribute("controls", "controls");	
-// 					ovideoElement.play();
-// 					ovideoDiv.appendChild(ovideoElement);
-// 
-// 					ovideoElement.addEventListener('click', function() {
-// 						var connected = false;
-// 						for (var i = 0; i < connectedcalls.length; i++) 
-// 						{
-// 							if (connectedcalls[i] == call.peer) {
-// 								connected = true;
-// 							}
-// 						}
-// 					
-// 						if (!connected) {
-// 							connectedcalls.push(call.peer);
-// 							sendPeerIdConnect(call.peer); 
-// 						} else {
-// 							sendPeerIdDisconnect(call.peer);
-// 
-// 							for (var i = 0; i < connectedcalls.length; i++) {
-// 								if (connectedcalls[i] == call.peer) {
-// 									connectedcalls.splice(i,1);
-// 								}
-// 							}																		
-// 						}
-// 					});					
-					
-				});		
-		
-				call.on('close', function() {
-					console.log("call.on close");
-
-// 					var ovideoElement = document.getElementById(call.peer);
-// 					ovideoElement.parentElement.removeChild(ovideoElement);
-// 					
-// 					var ovideoDiv = document.getElementById("div_" + call.peer);
-// 					if (ovideoDiv != null) {
-// 						ovideoDiv.parentElement.removeChild(ovideoDiv);
-// 					}
-
-//					var ovideoElement = document.getElementById('othervideo');
-					ovideoElement.src = cannedVideo;
-					ovideoElement.onloadedmetadata = function(e) {
-						//ovideoElement.width = e.target.videoWidth;
-						//ovideoElement.height = e.target.videoHeight;
-					};
-					ovideoElement.play();
-//					ovideoElement.loop = true;
-				});
-				
-				call.on('error', function(err) {
-					console.log(err);
-					
-//					var ovideoElement = document.getElementById('othervideo');
-					ovideoElement.src = cannedVideo;
-					ovideoElement.onloadedmetadata = function(e) {
-						//ovideoElement.width = e.target.videoWidth;
-						//ovideoElement.height = e.target.videoHeight;
-					};
-					ovideoElement.play();
-//					ovideoElement.loop = true;
-					
-// 					var ovideoElement = document.getElementById(call.peer);
-// 					if (ovideoElement != null) {
-// 						ovideoElement.parentElement.removeChild(ovideoElement);
-// 					}
-// 					
-// 					var ovideoDiv = document.getElementById("div_" + call.peer);
-// 					if (ovideoDiv != null) {
-// 						ovideoDiv.parentElement.removeChild(ovideoDiv);
-// 					}
-				});						
+				map.setCenter({lat: lat, lng: lng});
 			}
-
-
-			// var map = null;
-// 			
-// 			function initMap() {
-// 			  var myLatLng = {lat: 40.69818, lng: -74.02271};
-// 
-// 			  // Create a map object and specify the DOM element for display.
-// 			  map = new google.maps.Map(document.getElementById('mapdiv'), {
-// 				center: myLatLng,
-// 				scrollwheel: false,
-// 				zoom: 12
-// 			  });
-// 
-// 			}
 			
-			// var markers = [];
-// 			// {id, marker, lat, lng}
-// 			
-// 			function addMoveMarker(id, lat, lng) {
-// 				var found = false;
-// 				for (var i = 0; i < markers.length; i++) {
-// 					if (markers[i].id === id) {
-// 						// Update marker
-// 						markers[i].marker.setPosition({lat: lat, lng: lng});
-// 						markers[i].lat = lat;
-// 						markers[i].lng = lng;
-// 						found = true;
-// 						break;
-// 					}
-// 				}		
-// 				if (!found) {
-// 					// Create a marker and set its position.
-// 				  	var marker = new google.maps.Marker({
-// 						map: map,
-// 						position: {lat: lat, lng: lng},
-// 						title: 'Mobile'
-// 				  	});	
-// 				  	markers.push({id, marker, lat, lng});
-// 				}	
-// 				
-// 				map.setCenter({lat: lat, lng: lng});
-// 			}
-			
-			//window.addEventListener('load', initMap);
+			window.addEventListener('load', initMap);
 		</script>
 		
 			
@@ -392,6 +392,8 @@
 			#map_div {
 				background-color: black;
 				overflow: hidden;
+				width: 300px;
+				height: 465px;
 			}			
 
 			#smallvideo_div {
@@ -485,26 +487,24 @@
 				<div class="grid_8 nomargin">
 					<div id="fullvideo_div">
 						<video id="othervideo" height="465" width="100%" muted autoplay>
-							<!-- Canned Video?? -->
 						</video>
 					</div>
 				</div>
 				<div class="grid_4 nomargin">
 					<div id="map_div">
-						<img src="map.png" width="300" height="465">
 					</div>
 				</div>
 			
 				<div class="grid_8 nomargin">
 					<div id="messages">
 						<div id="scrollingmessages">
-							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Ok</div>
+							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile:</span> Ok</div>
 							<div class="message mymessage">Let me know if you think I should start recording or share with the group <span style="color: rgb(200,200,200);">:You</span></div>
-							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Yes</div>
+							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile:</span> Yes</div>
 							<div class="message mymessage">Are you at the scene?<span style="color: rgb(200,200,200);"> :You</span></div>
-							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Ok</div>
+							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile:</span> Ok</div>
 							<div class="message mymessage">Let me know if you think I should start recording or share with the group<span style="color: rgb(200,200,200);"> :You</span></div>
-							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile Activist:</span> Yes</div>
+							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile:</span> Yes</div>
 							<div class="message mymessage">Are you at the scene?<span style="color: rgb(200,200,200);"> :You</span></div>
 						</div>
 						<div id="send_div">
@@ -519,26 +519,8 @@
 						</video>
 					</div>				
 				</div>    
-	<!-- 
-				<div class="grid_12 nomargin">
-						<div id="description" class="whitemessage">
-						<p>Distant Witness is an open source platform which connects an individual mobile "CopWatch" activist via real-time video with a remote partner.</p>
-						<p>Features:
-							<ul>
-								<li>Live video recorded on the mobile device and the network.</li>	
-								<li>Location tracking of mobile activist</li>
-								<li>Live two way audio and video link</li>
-								<li>Real-time text messaging capabilities</li>
-							</ul>
-						These features support the "CopWatch" activist by providing the ability to receive live <b>guidance</b>, increasing <b>leverage</b> increased through the live remote witness, and offering the ability for <b>immediate assistance</b> or <b>amplification</b> should something go wrong.
-						</p>
-					</div>
-				</div>
-	 -->
 			</div>
 		</div>
-		<span style="color: rgb(100,100,100);"> Video Courtesy of WeCopwatch.org </span>
-
 	</body>
 
 </html>
