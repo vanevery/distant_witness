@@ -79,6 +79,28 @@
 			const socketserver = "https://liveweb.itp.io:443/";
 
 			var socket = null;
+			var peer = null;
+			var my_stream = null;
+			var peer_id = null;	
+			var videoSources = [];
+
+			var peerjsoptions = {
+								host: peerserver, 
+								port: peerserverport, 
+								path: '/', 
+								secure: true
+								};
+
+// 			var peerjsoptions = {
+// 								host: peerserver, 
+// 								port: peerserverport, 
+// 								path: '/', 
+// 								secure: true,
+// 								'iceServers': [
+// 									'stun:liveweb.itp.io:3478'
+// 								]
+// 								};
+
 
 			function sendPanic() {
 				if (socket != null) {
@@ -151,20 +173,13 @@
 				});
 
 				/* Get User Media */
-				var my_stream = null;
-
-				var peer_id = null;
-
-				var peer;
-				
-				var videoSources = [];
-
 				navigator.getUserMedia = navigator.getUserMedia || 
 					navigator.mozGetUserMedia || 
 					navigator.webkitGetUserMedia;
-	
+				
 				//var mediaConstraints = { audio: false, video: { width: 640, height: 480, optional: [{sourceId: "835acea08d27ea4ae22fbe97aaf8fb554e4cb0b7d106a77e9407cd87ed1175a6"}] }};
-				var mediaConstraints = { audio: false, video: { width: 640, height: 480} };
+				//var mediaConstraints = {audio: true, video: {width: 640, height: 480}};
+				var mediaConstraints = {audio: true, video: true};
 					//{ width: 640, height: 480, facingMode: "environment" }
 				
 				
@@ -190,7 +205,8 @@
 							}
 						}			
 			
-						console.log("navigator.mediaDevices.getUserMedia");
+						//navigator.getUserMedia(mediaConstraints, function(stream) {}, function(err) {});
+
 						navigator.getUserMedia(mediaConstraints, function(stream) {
 					
 							my_stream = stream;
@@ -204,7 +220,7 @@
 							videoElement.play();
 							videoElement.volume = 0;
 
-							peer = new Peer({host: peerserver, port: peerserverport, path: '/', secure: true});
+							peer = new Peer(peerjsoptions);
 
 							peer.on('open', function(id) {
 								peer_id = id;
@@ -221,7 +237,9 @@
 
 							peer.on('call', function(incoming_call) {
 								console.log("Got a call!");
-								incoming_call.answer(my_stream); 						
+								incoming_call.answer(my_stream); 
+								console.log("Answered with");
+								console.log(my_stream);
 								incoming_call.on('stream', function(remoteStream) { 
 									var ovideoElement = document.getElementById('othervideo');
 									ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
@@ -266,12 +284,12 @@
 						function (err) {
 						  console.log(err);
 						  console.log(err.message);
-						});				
+						});	// getusermedia			
 					}); // Sources
 				}// if (getusermedia)
 				
 				function makeCall(peeridtocall) {
-					var call = peer.call(peeridtocall,my_stream);
+					var call = peer.call(peeridtocall, my_stream);
 					call.on('stream', function(remoteStream) {  
 						var ovideoElement = document.getElementById('othervideo');
 						ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
