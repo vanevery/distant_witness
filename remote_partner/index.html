@@ -9,6 +9,38 @@
 			const httpsport = 443;
 			const peerserver = "liveweb.itp.io";
 			const peerserverport = 10000;
+			
+			var my_stream = null;
+			var peer_id = null;
+			var peer;			
+			
+			var ovideoElement;
+			var socket;
+			var connectedcalls = [];			
+			
+			function unmuteStream() {
+				if (my_stream != null) {
+					
+					var audioTracks = my_stream.getAudioTracks();
+					for (var i = 0, l = audioTracks.length; i < l; i++) {
+						audioTracks[i].enabled = true;
+						console.log("enabled audio track " + i);
+					}			
+				}
+			}
+			
+			function muteStream() {
+				if (my_stream != null) {
+					var audioTracks = my_stream.getAudioTracks();
+					for (var i = 0, l = audioTracks.length; i < l; i++) {
+						audioTracks[i].enabled = false;
+						console.log("disabled audio track " + i);
+
+					}			
+				}
+			}			
+			
+			var mediaConstraints = { audio: true, video: { mandatory: { maxWidth: 320 } } };
 
 			var peerjsoptions = {
 								host: peerserver, 
@@ -27,11 +59,17 @@
 // 								]
 // 								};
 
-			var ovideoElement;
-			var socket;
-			var connectedcalls = [];
 		
 			function init() {
+			
+				document.addEventListener('mousedown', function() {
+					unmuteStream();
+				});
+				
+				document.addEventListener('mouseup', function() {
+					muteStream();
+				});
+			
 				ovideoElement = document.getElementById('othervideo');	
 // 				ovideoElement.addEventListener('ended', function () {
 // 				  ovideoElement.load();
@@ -83,16 +121,11 @@
 				}
 
 				/* Get User Media */
-				var my_stream = null;
-
-				var peer_id = null;
-
-				var peer;
 
 				window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 				navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 				if (navigator.getUserMedia) {
-					navigator.getUserMedia({video: true, audio: true}, function(stream) {
+					navigator.getUserMedia(mediaConstraints, function(stream) {
 						my_stream = stream;
 						var videoElement = document.getElementById('myvideo');
 						videoElement.src = window.URL.createObjectURL(stream) || stream;
@@ -101,8 +134,7 @@
 	// 					var otherVideoElement = document.getElementById('othervideo');
 	// 					otherVideoElement.src = window.URL.createObjectURL(stream) || stream;
 	// 					otherVideoElement.play();
-	// 
-
+	
 						peer = new Peer(peerjsoptions);
 
 						// Get an ID from the PeerJS server		
@@ -252,11 +284,11 @@
 							videoChunks.push(e.data);
 						};
 
-    					mediaRecorder.start();
+    					//mediaRecorder.start();
 
-						setTimeout(function() {
-							mediaRecorder.stop();
-						}, 60000*5);
+// 						setTimeout(function() {
+// 							mediaRecorder.stop();
+// 						}, 60000*5);
 						
 	//					ovideoElement.loop = true;
 	// 					var ovideoDiv = document.createElement('div');
@@ -539,7 +571,7 @@
 				</div>
 				<div class="grid_8 nomargin">
 					<div id="fullvideo_div">
-						<video id="othervideo" height="465" width="100%" muted autoplay>
+						<video id="othervideo" height="465" width="100%" autoplay>
 						</video>
 					</div>
 				</div>

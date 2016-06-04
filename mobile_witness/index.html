@@ -78,6 +78,8 @@
 			const peerserverport = 10000;
 			const socketserver = "https://liveweb.itp.io:443/";
 
+			var mediaConstraints = { audio: true, video: { mandatory: { maxWidth: 720 } } };
+
 			var socket = null;
 			var peer = null;
 			var my_stream = null;
@@ -173,13 +175,18 @@
 				});
 
 				/* Get User Media */
-				navigator.getUserMedia = navigator.getUserMedia || 
-					navigator.mozGetUserMedia || 
-					navigator.webkitGetUserMedia;
+				window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+				navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 				
 				//var mediaConstraints = { audio: false, video: { width: 640, height: 480, optional: [{sourceId: "835acea08d27ea4ae22fbe97aaf8fb554e4cb0b7d106a77e9407cd87ed1175a6"}] }};
 				//var mediaConstraints = {audio: true, video: {width: 640, height: 480}};
-				var mediaConstraints = {audio: true, video: true};
+				//var mediaConstraints = {audio: true, video: true};
+// 				var mediaConstraints = new Object();
+// 				mediaConstraints.audio = true;
+// 				mediaConstraints.video = new Object();
+// 				mediaConstraints.video.width = 720;
+// //				mediaConstraints.video.height = 480;
+
 					//{ width: 640, height: 480, facingMode: "environment" }
 				
 				
@@ -219,6 +226,8 @@
 							};					
 							videoElement.play();
 							videoElement.volume = 0;
+							
+							
 
 							peer = new Peer(peerjsoptions);
 
@@ -248,7 +257,7 @@
 										//ovideoElement.height = e.target.videoHeight;
 									};
 									ovideoElement.play();
-									ovideoElement.volume = 0;
+									//ovideoElement.volume = 0;
 
 									//var ovideoElement = document.createElement('video');
 									//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
@@ -298,7 +307,7 @@
 							//ovideoElement.height = e.target.videoHeight;
 						};
 						ovideoElement.play();
-						ovideoElement.volume = 0;
+						//ovideoElement.volume = 0;
 
 						//var ovideoElement = document.createElement('video');
 						//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
@@ -370,7 +379,7 @@
 					<button id="helpbutton" onclick="sendPanic();">HELP</button>				
 				</div>
 				<div id="smallvideo_div" class="columns three">
-					<video id="othervideo" width="160" height="120" muted autoplay>
+					<video id="othervideo" width="160" height="120" autoplay>
 						<!-- Could put a default source -->
 					</video>
 				</div>
