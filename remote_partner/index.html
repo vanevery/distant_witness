@@ -10,6 +10,23 @@
 			const peerserver = "liveweb.itp.io";
 			const peerserverport = 10000;
 
+			var peerjsoptions = {
+								host: peerserver, 
+								port: peerserverport, 
+								path: '/', 
+								secure: true
+								};
+											
+// 			var peerjsoptions = {
+// 								host: peerserver, 
+// 								port: peerserverport, 
+// 								path: '/', 
+// 								secure: true,
+// 								'iceServers': [
+// 									'stun:liveweb.itp.io:3478'
+// 								]
+// 								};
+
 			var ovideoElement;
 			var socket;
 			var connectedcalls = [];
@@ -86,7 +103,7 @@
 	// 					otherVideoElement.play();
 	// 
 
-						peer = new Peer({host: peerserver, port: peerserverport, path: '/', secure: true});
+						peer = new Peer(peerjsoptions);
 
 						// Get an ID from the PeerJS server		
 						peer.on('open', function(id) {
@@ -195,6 +212,7 @@
 				function makeCall(peeridtocall) {
 					console.log("makeCall: " + peeridtocall);
 					var call = peer.call(peeridtocall,my_stream);
+					
 					call.on('stream', function(remoteStream) {  
 						console.log("makeCall: call.on stream");
 					
@@ -205,6 +223,41 @@
 							//ovideoElement.height = e.target.videoHeight;
 						};
 						ovideoElement.play();
+
+					    var videoChunks = [];
+						var mediaRecorder = new MediaRecorder(remoteStream);    
+						mediaRecorder.onstop = function(e) {
+							console.log(e);
+							
+							// Turn all of the chunks into a single blob
+							var blob = new Blob(videoChunks, { 'type' : 'video/webm' });
+							
+							// Read the blob as a file
+							var reader = new FileReader();
+							reader.addEventListener('loadend', function(e) {
+								// Create the videoBuffer and write to file
+								var videoBuffer = new Buffer(reader.result);
+								var fs = require('fs');
+								fs.writeFile('/Users/vanevery/Desktop/x.webm', videoBuffer,  function(err){
+									if (err) console.log(err);
+									console.log("It's saved!")
+								});									
+							}, false);														
+							reader.readAsArrayBuffer(blob);
+					    };
+
+						
+						mediaRecorder.ondataavailable = function(e) {
+							console.log("data");
+							videoChunks.push(e.data);
+						};
+
+    					mediaRecorder.start();
+
+						setTimeout(function() {
+							mediaRecorder.stop();
+						}, 60000*5);
+						
 	//					ovideoElement.loop = true;
 	// 					var ovideoDiv = document.createElement('div');
 	// 					ovideoDiv.setAttribute("id","div_" + call.peer);
