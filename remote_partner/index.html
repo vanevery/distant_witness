@@ -83,7 +83,7 @@
 				});
 				
 				socket.on('tag', function(data) {
-					addTag();
+					addTagJson(data);
 				});
 						
 				function sendModeratedMessage(message) {
@@ -270,15 +270,20 @@
 			function initTagging() {
 				var myVideo = document.getElementById('othervideo');
 				myVideo.addEventListener('click', function() {
-					addTag();
+					addTag("click");
 				});
 			}
-			
-			function addTag() {
-				socket.emit('tag', {});
-				var tag = {tag: 'tag', location: '', video: '', who: 'mobile', videoTimestamp: '', timestamp: Date.now()};
 
-				fs.appendFile(recordingLocation + currentVideoFileName + '.json', JSON.stringify(tag),  function(err){
+			function addTag(tag) {
+				var tagJson = {tag: tag, location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
+				socket.emit('tag', tagJson);
+				addTagJson(tagJson);
+			}
+			
+			function addTagJson(tagJson);
+				console.log(tagJson);
+			
+				fs.appendFile(recordingLocation + currentVideoFileName + '.json', JSON.stringify(tagJson),  function(err){
 					if (err) { 
 						console.log(err); 
 					} else {

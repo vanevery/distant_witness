@@ -56,18 +56,15 @@
 			    border: 2px solid black; 
 			    width: 75px;
 			    height: 50px;
-			    margin: 5px 5px 5px 5px;			
+			    margin: 5px 5px 5px 5px;
+				background-color: white;			
 			}
 			
 			button:active {
 				border: 3px solid white;
 			}
 			
-			#okbutton {
-				background-color: white;
-			}
-
-			#helpbutton {
+			.alert {
 				background-color: red;
 			}
 			
@@ -114,16 +111,30 @@
 
 
 			function sendPanic() {
+				var tagJson = {tag: 'panic', location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
 				if (socket != null) {
-					socket.emit('panic',"");
+					socket.emit('panic',tagJson);
+					insertMessage("Panic :You", "right");					
 				}
+				addTagJson(tagJson);
+			}
+			
+			function sendAlert() {
+				var tagJson = {tag: 'alert', location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
+				if (socket != null) {
+					socket.emit('alert',tagJson);
+					insertMessage("Alert :You", "right");
+				}
+				addTagJson(tagJson);
 			}
 			
 			function sendMessage(message) {
+				var tagJson = {tag: 'message', message: message, location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
 				if (socket != null) {
-					socket.emit('chatmessage', message);
+					socket.emit('message',tagJson);
 					insertMessage(message + ": You", "right");
 				}
+				addTagJson(tagJson);
 			}
 			
 			function insertMessage(message, alignment) {
@@ -186,7 +197,7 @@
 			});
 			
 			socket.on('tag', function(data) {
-				addTag();
+				addTagJson(data);
 			});
 
 			/* Get User Media */
@@ -373,7 +384,7 @@
 					}, videoSegmentLength);
 				}
 
-				startRecorder();
+				//startRecorder();
 			}	
 			
 			// Media File Management
@@ -421,14 +432,19 @@
 			function initTagging() {
 				var myVideo = document.getElementById('myvideo');
 				myVideo.addEventListener('click', function() {
-					addTag();
+					addTag("click");
 				});
 			}
 			
-			function addTag() {
-				socket.emit('tag', {});
-				var tag = {tag: 'tag', location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
-				console.log(tag);
+			function addTag(tag) {
+				var tagJson = {tag: tag, location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
+				socket.emit('tag', tagJson);
+
+				addTagJson(tagJson);
+			}
+			
+			function addTagJson(tagJson) {
+				console.log(tagJson);
 				
 				// Write to file
 				// Reorganize filesystem request code
@@ -446,7 +462,7 @@
 								  };
 
 								  // Can do append???
-								  fileWriter.append(tag);
+								  //fileWriter.append(tagJson);
 
 							}, function(err) { //createWriter
 								console.log(err);
@@ -472,7 +488,9 @@
 					//var lat = currentPosition.coords.latitude;
 					//var lng = currentPosition.coords.longitude;
 					currentLocation = {lat: currentPosition.coords.latitude, lng: currentPosition.coords.longitude}
-					socket.emit('location', currentLocation);
+					if (socket != null) {
+						socket.emit('location', currentLocation);
+					}
 				}
 
 				function errorCallback(e) {
@@ -485,27 +503,32 @@
 		</script>
 	</head>
 	<body>
-
 		<div class="container" id="fullvideo_container">
 			<div class="row" id="fullvideo_row">
 				<div id="fullvideo_div" class="columns twelve">
 					<video id="myvideo" muted autoplay></video>
+					<button id="start_video" onclick="initWebrtc();">Start Video</button>
 				</div>
 			</div>
+<!-- 
 			<div class="row" id="filelist_row">
 				<div id="filelist" class="columns three">
 					<button id="filesbutton" onclick="listFiles();">List Saved Videos</button>
 				</div>
 			</div>			
+ -->
 		</div>
 		<div class="container" id="smallvideo_container">
 			<div class="row" id="smallvideo_row">
 				<div id="messages" class="columns seven">
 				</div>
 				<div id="panel" class="columns two">
-					<button id="okbutton" onclick="sendMessage('Ok');">OK</button>
-					<button id="anotherbutton" onclick="sendMessage('Something');">Another</button>
-					<button id="helpbutton" onclick="sendPanic();">HELP</button>				
+					<button id="incident_start" onclick="addTag('incident_start');">Incident Start</button>
+					<button id="incident_interesting" onclick="addTag('incident_interesting');">Interesting Moment</button>
+					<button id="incident_end" onclick="addTag('incident_end');">Incident End</button>
+					
+					<button id="alert" class="alert" onclick="sendAlert('alert');">Alert</button>
+					<button id="helpbutton" class="alert" onclick="sendPanic();">Panic</button>
 				</div>
 				<div id="smallvideo_div" class="columns three">
 					<video id="othervideo" width="160" height="120" autoplay></video>

@@ -1,44 +1,47 @@
 	// Small Group
-// 	var phonenumbers = ['+17188096659', '+17185551212']; 
+	var phonenumbers = ['+17188096659']; 
 
 	// HTTP Portion
 	const httpport = 80;
 	const httpsport = 443;
+	
+	const publicURL = "https://liveweb.itp.io/public.html";
 	
 	var http = require('http');
 	var https = require('https');
 	var fs = require('fs'); // Using the filesystem module
 	var url = require('url');
 
-// 	var nedb = require('nedb');
-//   	var incidents = new nedb({ filename: 'data.db', autoload: true });
+	var nedb = require('nedb');
+  	var incidents = new nedb({ filename: 'data.db', autoload: true });
 
 	// Send SMS Functionality
-// 	var twilio = require('twilio');
-// 	var request = require('request');
-// 	var twillio_client = new twilio.RestClient('', '');
-// 	var twilioNumber = '+17187178830';
-// 
-// 	function sendSMS(message) {
-// 		for (var i = 0; i < phonenumbers.length; i++) {
-// 			twillio_client.sms.messages.create({
-// 				to: phonenumbers[i],
-// 				from: twilioNumber,
-// 				body: message
-// 			}, function(error, message) {
-// 				if (!error) {
-// 					console.log('Success! The SID for this SMS message is:');
-// 					console.log(message.sid);
-//  
-// 					console.log('Message sent on:');
-// 					console.log(message.dateCreated);
-// 				} else {
-// 					console.log('Oops! There was an error.');
-// 				console.log(error);
-// 				}
-// 			});
-// 		}
-// 	}
+	var twilio = require('twilio');
+	var request = require('request');
+	var keys = require('./keys.js');	
+	var twillio_client = new twilio.RestClient(keys.twilio_account_sid, keys.twilio_auth_token);
+	var twilioNumber = '+17187178830';
+
+	function sendSMS(message) {
+		for (var i = 0; i < phonenumbers.length; i++) {
+			twillio_client.sms.messages.create({
+				to: phonenumbers[i],
+				from: twilioNumber,
+				body: message
+			}, function(error, message) {
+				if (!error) {
+					console.log('Success! The SID for this SMS message is:');
+					console.log(message.sid);
+ 
+					console.log('Message sent on:');
+					console.log(message.dateCreated);
+				} else {
+					console.log('Oops! There was an error.');
+				console.log(error);
+				}
+			});
+		}
+	}
 
 	var options = {
 	  key: fs.readFileSync('my-key.pem'),
@@ -189,14 +192,37 @@
 					socket.location = data;
 					// Send to everyone?
 					io.sockets.emit('location', data);
-				
+		
+					data.socket_id = socket.id;		
+					incidents.insert(data, function(err) { console.log(err); });
 				//}
 			});
 			
 			// Mobile or Desktop user sends tag event
 			socket.on('tag', function(data) {
 				log(socket, 'tag', data);
+				data.socket_id = socket.id;
+				incidents.insert(data, function (err) { console.log(err); });
 				io.sockets.emit('tag', data);
+			});
+			
+			socket.on('alert', function(data) {
+				log(socket, 'alert', data);
+				socket.alert = true;
+				io.sockets.emit('alert', data);
+				data.socket_id = socket.id;
+				incidents.insert(data, function (err) { console.log(err); });
+				alert(socket);
+			});
+			
+			socket.on('getdata', function(data) {
+				log(socket, 'getdata', data);
+				//incidents.find({ socket_id: { $eq: data } }, function (err, docs) {
+				incidents.find({}, function(err, docs) {
+					if (err) console.log(err); 
+					console.log(docs);
+      				io.sockets.emit('gotdata', docs);
+      			});				
 			});
 		
 			// Mobile user sends panic
@@ -210,7 +236,7 @@
 					// Send to everyone
 					io.sockets.emit('panic', data);
 				//}
-				
+				incidents.insert(data, function (err) { console.log(err); });
 				panic(socket);
 			});	
 		
@@ -272,6 +298,14 @@
 	function panic(socket) {
 		// Do anything with relevant panic information
 		console.log(socket.id + ": panic");
+		
+		sendSMS("PANIC " + publicURL + "?socketid=" + socket.id);
+	}
+	
+	function alert(socket) {
+		console.log(socket.id + ": alert");
+		
+		sendSMS("Alert " + publicURL + "?socketid=" + socket.id);
 	}
 	
 /////  Peer Server
