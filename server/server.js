@@ -82,7 +82,13 @@
 				socket.type = data;
 			
 				// Send them any relevant data
-			
+				if (socket.type == "director") {
+					for (var i = 0; i < clients.length; i++) {
+						if (clients[i] != null && clients[i].type == "mobile" && clients[i].location) {
+							socket.emit('location',clients[i].location);
+						}
+					}
+				}
 			});
 		
 			// Tell remote to connect to peer-id
@@ -156,6 +162,12 @@
 				
 				//}
 			});
+			
+			// Mobile or Desktop user sends tag event
+			socket.on('tag', function(data) {
+				log(socket, 'tag', data);
+				io.sockets.emit('tag', data);
+			}
 		
 			// Mobile user sends panic
 			socket.on('panic', function(data) {
@@ -168,6 +180,8 @@
 					// Send to everyone
 					io.sockets.emit('panic', data);
 				//}
+				
+				panic(socket);
 			});	
 		
 			// Moderated message from director to mobile
@@ -223,6 +237,11 @@
 
 	function log(socket, action, message) {
 		console.log(socket.id + ": " + action + ": " + message);
+	}
+	
+	function panic(socket) {
+		// Do anything with relevant panic information
+		console.log(socket.id + ": panic");
 	}
 	
 /////  Peer Server
