@@ -10,7 +10,10 @@
 			const peerserver = "liveweb.itp.io";
 			const peerserverport = 10000;
 			const videoSegmentLength = 3000; // 3 seconds
+			const recordingLocation = "/Users/vanevery/Desktop/";
 			
+			var fs = require('fs');
+
 			var my_stream = null;
 			var peer_id = null;
 			var peer = null;			
@@ -21,7 +24,7 @@
 			
 			var currentLocation = null;					
 			
-			var mediaConstraints = { audio: true, video: { mandatory: { maxWidth: 320 } } };
+			var mediaConstraints = { audio: true, video: { mandatory: { maxWidth: 160, maxHeight: 120 } } };
 
 			var peerjsoptions = {
 								host: peerserver, 
@@ -70,6 +73,14 @@
 					console.log("socket on location");
 					addMoveMarker(socket.id, data.lat, data.lng);
 					currentLocation = {lat: data.lat, lng: data.lng, date: Date.now()};
+				});
+				
+				socket.on('panic', function(data) {
+					document.body.style.backgroundColor = "red";
+				});
+				
+				socket.on('tag', function(data) {
+					addTag();
 				});
 						
 				function sendModeratedMessage(message) {
@@ -178,8 +189,6 @@
 						if (mediaRecorder != null && mediaRecorder.state == "recording") {
 							mediaRecorder.stop();
 						}
-						
-
 					});						
 				}
 			}
@@ -210,7 +219,10 @@
 			var mediaRecorder = null;
 			var remoteStream = null;
 			var recordingTimeout = null;
+			var currentVideoFileName = null;
 			function initRecorder() {
+				currentVideoFileName = Date.now() + ".webm";
+				
 				mediaRecorder = new MediaRecorder(remoteStream);   
 				 
 				mediaRecorder.onstop = function(e) {
@@ -228,8 +240,7 @@
 					reader.addEventListener('loadend', function(e) {
 						// Create the videoBuffer and write to file
 						var videoBuffer = new Buffer(reader.result);
-						var fs = require('fs');
-						fs.writeFile('/Users/vanevery/Desktop/' + Date.now() + '.webm', videoBuffer,  function(err){
+						fs.writeFile(recordingLocation + currentVideoFileName, videoBuffer,  function(err){
 							if (err) console.log(err);
 							console.log("It's saved!")
 						});									
@@ -238,7 +249,6 @@
 				};
 
 				mediaRecorder.ondataavailable = function(e) {
-					console.log("data");
 					videoChunks.push(e.data);
 				};
 
@@ -246,13 +256,35 @@
 	    			mediaRecorder.start();
 					recordingTimeout = setTimeout(function() {
 						mediaRecorder.stop();
+						initRecorder();
 					}, videoSegmentLength);
 	    		}
 
 				startRecorder();
 			}									
 			
+			// Tagging functionality
+			function initTagging() {
+				var myVideo = document.getElementById('othervideo');
+				myVideo.addEventListener('click', function() {
+					addTag();
+				});
+			}
 			
+			function addTag() {
+				socket.emit('tag', {});
+				var tag = {tag: 'tag', location: '', video: '', who: 'mobile', videoTimestamp: '', timestamp: Date.now()};
+
+				fs.appendFile(recordingLocation + currentVideoFileName + '.json', JSON.stringify(tag),  function(err){
+					if (err) { 
+						console.log(err); 
+					} else {
+						console.log("tag saved!");
+					}
+				});				
+			}
+			
+			window.addEventListener('load', initTagging);			
 
 			// Press to talk functionality
 			function unmuteStream() {
@@ -281,17 +313,17 @@
 			window.addEventListener('load', function() {
 				document.getElementById('talkbutton').addEventListener('mousedown', function() {
 					unmuteStream();
-					document.getElementById('talkbutton').backgroundColor = "red";
+					document.getElementById('talkbutton').style.backgroundColor = "green";
 				});
 				
 				document.getElementById('talkbutton').addEventListener('mouseup', function() {
 					muteStream();
-					document.getElementById('talkbutton').backgroundColor = "rgb(128,128,128)";
+					document.getElementById('talkbutton').style.backgroundColor = "rgb(128,128,128)";
 				});
 				
 				document.getElementById('talkbutton').addEventListener('mouseout', function() {
 					muteStream();
-					document.getElementById('talkbutton').backgroundColor = "rgb(128,128,128)";
+					document.getElementById('talkbutton').style.backgroundColor = "rgb(128,128,128)";
 				});			
 			});
 
@@ -504,14 +536,6 @@
 				<div class="grid_8 nomargin">
 					<div id="messages">
 						<div id="scrollingmessages">
-							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile:</span> Ok</div>
-							<div class="message mymessage">Let me know if you think I should start recording or share with the group <span style="color: rgb(200,200,200);">:You</span></div>
-							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile:</span> Yes</div>
-							<div class="message mymessage">Are you at the scene?<span style="color: rgb(200,200,200);"> :You</span></div>
-							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile:</span> Ok</div>
-							<div class="message mymessage">Let me know if you think I should start recording or share with the group<span style="color: rgb(200,200,200);"> :You</span></div>
-							<div class="message remotemessage"><span style="color: rgb(200,200,200);">Mobile:</span> Yes</div>
-							<div class="message mymessage">Are you at the scene?<span style="color: rgb(200,200,200);"> :You</span></div>
 						</div>
 						<div id="send_div">
 							<input type="text" id="thetext">
