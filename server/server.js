@@ -167,7 +167,7 @@
 			socket.on('tag', function(data) {
 				log(socket, 'tag', data);
 				io.sockets.emit('tag', data);
-			}
+			});
 		
 			// Mobile user sends panic
 			socket.on('panic', function(data) {
