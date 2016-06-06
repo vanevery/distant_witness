@@ -85,6 +85,8 @@
 			const peerserver = "localhost";
 			const peerserverport = 10000;
 			const socketserver = "https://localhost:443/";
+			
+			const tagsFilename = "videotags.json";
 
 			const videoSegmentLength = 60000; // 60 seconds
 			const storageQuota = 1024 * 1024 * 1024; // 1 GB - Is that too much?
@@ -308,12 +310,14 @@
 			var mediaRecorder = null;
 			var recordingTimeout = null;
 			var currentVideoFileName = null;
+			var currentVideoStartTime = null;
 			function initRecorder() {
 				console.log("initRecorder");
 				currentVideoFileName = Date.now() + ".webm";
 			
 				mediaRecorder = new MediaRecorder(my_stream);   
-			 
+				currentVideoStartTime = Date.now();
+				 
 				mediaRecorder.onstop = function(e) {
 				
 					//clearTimeout(recordingTimeout);
@@ -421,14 +425,42 @@
 			
 			function addTag() {
 				socket.emit('tag', {});
-				var tag = {tag: 'tag', location: '', video: '', who: 'mobile', videoTimestamp: '', timestamp: Date.now()};
+				var tag = {tag: 'tag', location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
 				console.log(tag);
+				
 				// Write to file
+				// Reorganize filesystem request code
+				window.requestFileSystem(window.PERSISTENT, storageChunkSize, function(fs) {
+					fs.root.getFile(tagsFilename, {create: true, exclusive: true}, 
+						function(fileEntry) {
+							fileEntry.createWriter(function(fileWriter) {
+
+								  fileWriter.onwriteend = function(e) {
+									console.log('Write completed.');
+								  };
+
+								  fileWriter.onerror = function(e) {
+									console.log('Write failed: ' + e.toString());
+								  };
+
+								  // Can do append???
+								  fileWriter.append(tag);
+
+							}, function(err) { //createWriter
+								console.log(err);
+							});									
+					}, function(err) {  // getFile
+						console.log(err);
+					});
+				}, function(err) {  // requestFileSystem
+					console.log(err);
+				}); //requestFileSystem Error				
 			}
 			
 			window.addEventListener('load', initTagging);				
 
 			// GeoLocation
+			var currentLocation = null;
 			if (navigator.geolocation) 
 			{
 				navigator.geolocation.watchPosition(successCallback, errorCallback, {});
@@ -437,8 +469,8 @@
 			
 					//var lat = currentPosition.coords.latitude;
 					//var lng = currentPosition.coords.longitude;
-				
-					socket.emit('location', {lat: currentPosition.coords.latitude, lng: currentPosition.coords.longitude});
+					currentLocation = {lat: currentPosition.coords.latitude, lng: currentPosition.coords.longitude}
+					socket.emit('location', currentLocation);
 				}
 
 				function errorCallback(e) {
