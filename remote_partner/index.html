@@ -5,9 +5,13 @@
 		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAGE3faVAYtFxrVWtxKWXklXksPVaXXw6E&callback=initMap" async defer></script>
 
 		<script type="text/javascript">
+// 			const httpsserver = "localhost";
+// 			const peerserver = "localhost";
+			
 			const httpsserver = "liveweb.itp.io";
-			const httpsport = 443;
 			const peerserver = "liveweb.itp.io";
+			
+			const httpsport = 443;
 			const peerserverport = 10000;
 			const videoSegmentLength = 3000; // 3 seconds
 			const recordingLocation = "/Users/vanevery/Desktop/";
@@ -227,7 +231,7 @@
 				 
 				mediaRecorder.onstop = function(e) {
 					
-					clearTimeout(recordingTimeout);
+					//clearTimeout(recordingTimeout);
 						
 					// Turn all of the chunks into a single blob
 					var blob = new Blob(videoChunks, { 'type' : 'video/webm' });
