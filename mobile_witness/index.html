@@ -78,9 +78,17 @@
 		<script type="text/javascript" src="socket.io.js"></script>
 
 		<script type="text/javascript">
-			const peerserver = "liveweb.itp.io";
+// 			const peerserver = "liveweb.itp.io";
+// 			const peerserverport = 10000;
+// 			const socketserver = "https://liveweb.itp.io:443/";
+
+			const peerserver = "localhost";
 			const peerserverport = 10000;
-			const socketserver = "https://liveweb.itp.io:443/";
+			const socketserver = "https://localhost:443/";
+
+			const videoSegmentLength = 3000; // 3 seconds
+			const storageQuota = 100 * 1024 * 1024; // 100 MB
+			const storageChunkSize = 10 * 1024 * 1024; // 10 MB
 
 			var mediaConstraints = { audio: true, video: { mandatory: { maxWidth: 720 } } };
 			//{ width: 640, height: 480, facingMode: "environment" }
@@ -119,7 +127,7 @@
 			function insertMessage(message, alignment) {
 				var newmessage = document.createElement("div");
 				newmessage.className = "message";
-				newmessage.innerHTML = data;
+				newmessage.innerHTML = message;
 				newmessage.style.textAlign = alignment;
 			
 				var messages = document.getElementById("messages");
@@ -130,10 +138,10 @@
 				}			
 			}
 					
-			document.addEventListener('DOMContentLoaded', function() {
-
+			// Formatting and Lifecycle
+			document.addEventListener('DOMContentLoaded', function() {	
 				var landscapeOrPortrait = "landscape";
-												
+									
 				if (window.innerHeight > window.innerWidth){
 					landscapeOrPortrait = "portrait";
 				}
@@ -145,176 +153,175 @@
 					document.getElementById('myvideo').width=window.innerWidth;
 	//					document.getElementById('myvideo').height=null;
 				}
-
-				console.log(landscapeOrPortrait);
 			
-				function handleVisibilityChange() {
-				  if (document.hidden) {
-					window.close();
-				  } else  {
-	
-				  }
-				}
-
-				document.addEventListener("visibilitychange", handleVisibilityChange, false);			
-			
-				socket = io.connect(socketserver);
-
-				socket.on('connect', function() {
-					console.log("Socket Connected");
-					socket.emit('type','mobile');
-					if (peer_id != null) {
-						console.log("emitting peerid " + peer_id);
-						socket.emit('peerid',peer_id);
+				document.addEventListener("visibilitychange", function() {
+					if (document.hidden) {
+						window.close();
 					}				
-				});
-
-				socket.on('chatmessage', function (data) {
-					insertMessage("Remote: " + data, "left");
-				});
-
-				socket.on('peerid', function(data) {
-					console.log("receiving peerid " + data);
-					makeCall(data);
-				});
-				
-				socket.on('tag', function(data) {
-					addTag();
-				});
-
-				/* Get User Media */
-				window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
-				navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-				
-				if (navigator.getUserMedia) {
-					console.log("getUserMedia is true");
-
-					var sourceId = null;
-
-					MediaStreamTrack.getSources(function(sourceInfos) {
-						for (var i = 0; i < sourceInfos.length; i++) {
-							if (sourceInfos[i].kind === 'video') {
-							  console.log(sourceInfos[i]);
-							  videoSources.push(sourceInfos[i]);
-							  
-							  if (sourceInfos[i].facing == "environment") {
-							  	sourceId = sourceInfos[i].id;
-							  	mediaConstraints.video.optional = [];
-							  	mediaConstraints.video.optional[0] = {};
-							  	mediaConstraints.video.optional[0].sourceId = sourceId;
-							  	break;
-							  }	
-							}
-						}			
+				}, false);			
 			
-						navigator.getUserMedia(mediaConstraints, function(stream) {
-					
-							my_stream = stream;
-							var videoElement = document.getElementById('myvideo');
-							videoElement.src = window.URL.createObjectURL(stream) || stream;
-							videoElement.onloadedmetadata = function(e) {
-								//console.log(e);
-								///videoElement.width = e.target.videoWidth;
-								//videoElement.height = e.target.videoHeight;
-							};					
-							videoElement.play();
-							videoElement.volume = 0;
-							
-							initRecorder();
+			});
 
-							peer = new Peer(peerjsoptions);
+			// Socket
+			socket = io.connect(socketserver);
 
-							peer.on('open', function(id) {
-								peer_id = id;
-								console.log("peer id: " + peer_id);
+			socket.on('connect', function() {
+				console.log("Socket Connected");
+				socket.emit('type','mobile');
+				if (peer_id != null) {
+					console.log("emitting peerid " + peer_id);
+					socket.emit('peerid',peer_id);
+				}				
+			});
+
+			socket.on('chatmessage', function (data) {
+				insertMessage("Remote: " + data, "left");
+			});
+
+			socket.on('peerid', function(data) {
+				console.log("receiving peerid " + data);
+				makeCall(data);
+			});
+			
+			socket.on('tag', function(data) {
+				addTag();
+			});
+
+			/* Get User Media */
+			window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+			
+			if (navigator.getUserMedia) {
+				console.log("getUserMedia is true");
+
+				var sourceId = null;
+
+				MediaStreamTrack.getSources(function(sourceInfos) {
+					for (var i = 0; i < sourceInfos.length; i++) {
+						if (sourceInfos[i].kind === 'video') {
+						  console.log(sourceInfos[i]);
+						  videoSources.push(sourceInfos[i]);
+						  
+						  if (sourceInfos[i].facing == "environment") {
+							sourceId = sourceInfos[i].id;
+							mediaConstraints.video.optional = [];
+							mediaConstraints.video.optional[0] = {};
+							mediaConstraints.video.optional[0].sourceId = sourceId;
+							break;
+						  }	
+						}
+					}			
+		
+					navigator.getUserMedia(mediaConstraints, function(stream) {
+				
+						my_stream = stream;
+						var videoElement = document.getElementById('myvideo');
+						videoElement.src = window.URL.createObjectURL(stream) || stream;
+						videoElement.onloadedmetadata = function(e) {
+							//console.log(e);
+							///videoElement.width = e.target.videoWidth;
+							//videoElement.height = e.target.videoHeight;
+						};					
+						videoElement.play();
+						videoElement.volume = 0;
 						
-								if (socket != null) {						  
-									socket.emit('peerid', peer_id);
-								}
-							});		
+						initRecorder();
+
+						peer = new Peer(peerjsoptions);
+
+						peer.on('open', function(id) {
+							peer_id = id;
+							console.log("peer id: " + peer_id);
 					
-							peer.on('error', function(error) {
-								console.log(error);
+							if (socket != null) {						  
+								socket.emit('peerid', peer_id);
+							}
+						});		
+				
+						peer.on('error', function(error) {
+							console.log(error);
+						});
+
+						peer.on('call', function(incoming_call) {
+							console.log("Got a call!");
+							incoming_call.answer(my_stream); 
+							console.log("Answered with");
+							console.log(my_stream);
+							incoming_call.on('stream', function(remoteStream) { 
+								var ovideoElement = document.getElementById('othervideo');
+								ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+								ovideoElement.onloadedmetadata = function(e) {
+									//ovideoElement.width = e.target.videoWidth;
+									//ovideoElement.height = e.target.videoHeight;
+								};
+								ovideoElement.play();
 							});
-
-							peer.on('call', function(incoming_call) {
-								console.log("Got a call!");
-								incoming_call.answer(my_stream); 
-								console.log("Answered with");
-								console.log(my_stream);
-								incoming_call.on('stream', function(remoteStream) { 
-									var ovideoElement = document.getElementById('othervideo');
-									ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-									ovideoElement.onloadedmetadata = function(e) {
-										//ovideoElement.width = e.target.videoWidth;
-										//ovideoElement.height = e.target.videoHeight;
-									};
-									ovideoElement.play();
-								});
-						
-								incoming_call.on('close', function() {
-									var ovideoElement = document.getElementById('othervideo');
-									ovideoElement.src = null;
-								});
-						
-								incoming_call.on('error', function(err) {
-									console.log(err);
-									var ovideoElement = document.getElementById('othervideo');
-									ovideoElement.src = null;	
-								}); //incoming_call.on('error
-						
-							}); //peer.on('call')
-						},
-						function (err) {
-						  console.log(err);
-						  console.log(err.message);
-						});	// getusermedia			
-					}); // Sources
-				}// if (getusermedia)
-				
-				function makeCall(peeridtocall) {
-					var call = peer.call(peeridtocall, my_stream);
-					call.on('stream', function(remoteStream) {  
-						var ovideoElement = document.getElementById('othervideo');
-						ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-						ovideoElement.onloadedmetadata = function(e) {
-							//ovideoElement.width = e.target.videoWidth;
-							//ovideoElement.height = e.target.videoHeight;
-						};
-						ovideoElement.play();
-					});	
-						
-					call.on('close', function() {
-						var ovideoElement = document.getElementById('othervideo');
-						ovideoElement.src = null;
-					});
-				
-					call.on('error', function(err) {
-						var ovideoElement = document.getElementById('othervideo');
-						ovideoElement.src = null;
-					});						
-				}
-
-				// Media Recording functionality
-				window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
-				
-				var videoChunks = [];
-				var mediaRecorder = null;
-				var recordingTimeout = null;
-				function initRecorder() {
-					mediaRecorder = new MediaRecorder(my_stream);   
-				 
-					mediaRecorder.onstop = function(e) {
 					
-						clearTimeout(recordingTimeout);
-						
-						// Turn all of the chunks into a single blob
-						var blob = new Blob(videoChunks, { 'type' : 'video/webm' });
+							incoming_call.on('close', function() {
+								var ovideoElement = document.getElementById('othervideo');
+								ovideoElement.src = null;
+							});
 					
-						// Reset videoChunks
-						videoChunks.length = 0;
+							incoming_call.on('error', function(err) {
+								console.log(err);
+								var ovideoElement = document.getElementById('othervideo');
+								ovideoElement.src = null;	
+							}); //incoming_call.on('error
+					
+						}); //peer.on('call')
+					},
+					function (err) {
+					  console.log(err);
+					  console.log(err.message);
+					});	// getusermedia			
+				}); // Sources
+			}// if (getusermedia)
+			
+			function makeCall(peeridtocall) {
+				var call = peer.call(peeridtocall, my_stream);
+				call.on('stream', function(remoteStream) {  
+					var ovideoElement = document.getElementById('othervideo');
+					ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+					ovideoElement.onloadedmetadata = function(e) {
+						//ovideoElement.width = e.target.videoWidth;
+						//ovideoElement.height = e.target.videoHeight;
+					};
+					ovideoElement.play();
+				});	
+					
+				call.on('close', function() {
+					var ovideoElement = document.getElementById('othervideo');
+					ovideoElement.src = null;
+				});
+			
+				call.on('error', function(err) {
+					var ovideoElement = document.getElementById('othervideo');
+					ovideoElement.src = null;
+				});						
+			}
 
-						window.requestFileSystem(window.PERSISTENT, 10 * 1024 * 1024, function(fs) {
+			// Media Recording functionality
+
+			window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;				
+			
+			var videoChunks = [];
+			var mediaRecorder = null;
+			var recordingTimeout = null;
+			function initRecorder() {
+				mediaRecorder = new MediaRecorder(my_stream);   
+			 
+				mediaRecorder.onstop = function(e) {
+				
+					clearTimeout(recordingTimeout);
+					
+					// Turn all of the chunks into a single blob
+					var blob = new Blob(videoChunks, { 'type' : 'video/webm' });
+				
+					// Reset videoChunks
+					videoChunks.length = 0;
+
+					window.webkitStorageInfo.requestQuota(PERSISTENT, storageQuota, function(grantedBytes) {
+						window.requestFileSystem(window.PERSISTENT, storageChunkSize, function(fs) {
 							fs.root.getFile(Date.now() + '.webm', {create: true, exclusive: true}, 
 								function(fileEntry) {
 									fileEntry.createWriter(function(fileWriter) {
@@ -329,70 +336,113 @@
 
 										  fileWriter.write(blob);
 
-									}, function(err) {
+									}, function(err) { //createWriter
 										console.log(err);
 									});									
-							}, function(err) {
+							}, function(err) {  // getFile
 								console.log(err);
 							});
-						}, function(err) {
+						}, function(err) {  // requestFileSystem
 							console.log(err);
-						});
-					};
+						}); //requestFileSystem Error
+					}, function(err) {  // requestQuota
+					  console.log(err);
+					}); //requestQuota Error
+				}; // onstop
 
-					mediaRecorder.ondataavailable = function(e) {
-						videoChunks.push(e.data);
-					};
+				mediaRecorder.ondataavailable = function(e) {
+					videoChunks.push(e.data);
+				};
 
-					function startRecorder() {
-						mediaRecorder.start();
-						recordingTimeout = setTimeout(function() {
-							mediaRecorder.stop();
-							initRecorder();
-						}, videoSegmentLength);
-					}
-
-					startRecorder();
-				}	
-				
-				// Tagging functionality
-				function initTagging() {
-					var myVideo = document.getElementById('myvideo');
-					myVideo.addEventListener('click', function() {
-						addTag();
-					});
+				function startRecorder() {
+					mediaRecorder.start();
+					recordingTimeout = setTimeout(function() {
+						mediaRecorder.stop();
+						initRecorder();
+					}, videoSegmentLength);
 				}
+
+				startRecorder();
+			}	
+			
+			// Media File Management
+			function listFiles() {
+				console.log("listFiles");
+				window.requestFileSystem(window.PERSISTENT, storageChunkSize, function(fs) {
+					var dirReader = fs.root.createReader();
+					var entries = [];
+
+					// Call the reader.readEntries() until no more results are returned.
+					var readEntries = function() {
+						dirReader.readEntries (function(results) {
+							if (!results.length) {
+								// No more results, list them
+								listResults(entries.sort());
+							} else {
+								entries = entries.concat(Array.prototype.slice.call(results || [], 0));
+								readEntries();
+							}
+						}, function (err) { // readEntries
+							console.log(err);
+						}); // readEntries err
+					};
+					readEntries(); // Start reading dirs.						
+				}, function(err) {
+					console.log(err);
+				});				
+			}
+			
+			function listResults(entries) {
+				var fragment = document.createDocumentFragment();
+
+				entries.forEach(function(entry, i) {
+					if (entry.name.indexOf(".webm") > -1) {
+						var li = document.createElement('li');
+						li.innerHTML = '<span><a href="'+ entry.toURL() +'">'+entry.name+'</a></span>';
+						fragment.appendChild(li);
+					}
+				});
+
+				document.querySelector('#filelist').appendChild(fragment);
+			}
+			
+			// Tagging functionality
+			function initTagging() {
+				var myVideo = document.getElementById('myvideo');
+				myVideo.addEventListener('click', function() {
+					addTag();
+				});
+			}
+			
+			function addTag() {
+				socket.emit('tag', {});
+				var tag = {tag: 'tag', location: '', video: '', who: 'mobile', videoTimestamp: '', timestamp: Date.now()};
+				console.log(tag);
+				// Write to file
+			}
+			
+			window.addEventListener('load', initTagging);				
+
+			// GeoLocation
+			if (navigator.geolocation) 
+			{
+				navigator.geolocation.watchPosition(successCallback, errorCallback, {});
+
+				function successCallback(currentPosition) {
+			
+					//var lat = currentPosition.coords.latitude;
+					//var lng = currentPosition.coords.longitude;
 				
-				function addTag() {
-					socket.emit('tag', {});
-					var tag = {tag: 'tag', location: '', video: '', who: 'mobile', videoTimestamp: '', timestamp: Date.now()};
-					console.log(tag);
-					// Write to file
+					socket.emit('location', {lat: currentPosition.coords.latitude, lng: currentPosition.coords.longitude});
 				}
-				
-				window.addEventListener('load', initTagging);				
 
-				// GeoLocation
-				if (navigator.geolocation) 
-				{
-					navigator.geolocation.watchPosition(successCallback, errorCallback, {});
+				function errorCallback(e) {
+					console.log(e);
+				}
 
-					function successCallback(currentPosition) {
-				
-						//var lat = currentPosition.coords.latitude;
-						//var lng = currentPosition.coords.longitude;
-					
-						socket.emit('location', {lat: currentPosition.coords.latitude, lng: currentPosition.coords.longitude});
-					}
-
-					function errorCallback(e) {
-						console.log(e);
-					}
-
-				} else {
-					console.log("Geolocation Not Allowed");
-				}				
-			});
+			} else {
+				console.log("Geolocation Not Allowed");
+			}				
 		</script>
 	</head>
 	<body>
@@ -402,6 +452,11 @@
 					<video id="myvideo" muted autoplay></video>
 				</div>
 			</div>
+			<div class="row" id="filelist_row">
+				<div id="filelist" class="columns three">
+					<button id="filesbutton" onclick="listFiles();">List Saved Videos</button>
+				</div>
+			</div>			
 		</div>
 		<div class="container" id="smallvideo_container">
 			<div class="row" id="smallvideo_row">
