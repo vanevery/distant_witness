@@ -1,3 +1,6 @@
+	// Small Group
+// 	var phonenumbers = ['+17188096659', '+17185551212']; 
+
 	// HTTP Portion
 	const httpport = 80;
 	const httpsport = 443;
@@ -7,13 +10,15 @@
 	var fs = require('fs'); // Using the filesystem module
 	var url = require('url');
 
+// 	var nedb = require('nedb');
+//   	var incidents = new nedb({ filename: 'data.db', autoload: true });
+
 	// Send SMS Functionality
 // 	var twilio = require('twilio');
 // 	var request = require('request');
-// 	var phonenumbers = ['+12125551212', '+17185551212']; 
 // 	var twillio_client = new twilio.RestClient('', '');
-//	var twilioNumber = '+17187178830';
-
+// 	var twilioNumber = '+17187178830';
+// 
 // 	function sendSMS(message) {
 // 		for (var i = 0; i < phonenumbers.length; i++) {
 // 			twillio_client.sms.messages.create({

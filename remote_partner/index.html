@@ -31,16 +31,15 @@
 			var mediaConstraints = { audio: true, video: { mandatory: { maxWidth: 160, maxHeight: 120 } } };
 
 			var peerjsoptions = {
-								host: peerserver, 
-								port: peerserverport, 
-								path: '/', 
-								secure: true
-								};
+				host: peerserver, 
+				port: peerserverport, 
+				path: '/', 
+				secure: true
+			};
 											
 // 								'iceServers': [
 // 									'stun:liveweb.itp.io:3478'
 // 								]
-
 		
 			function init() {
 				ovideoElement = document.getElementById('othervideo');	

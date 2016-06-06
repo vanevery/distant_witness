@@ -190,94 +190,96 @@
 			});
 
 			/* Get User Media */
-			window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
-			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+			function initWebrtc() {
+				window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+				navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 			
-			if (navigator.getUserMedia) {
-				console.log("getUserMedia is true");
+				if (navigator.getUserMedia) {
+					console.log("getUserMedia is true");
 
-				var sourceId = null;
+					var sourceId = null;
 
-				MediaStreamTrack.getSources(function(sourceInfos) {
-					for (var i = 0; i < sourceInfos.length; i++) {
-						if (sourceInfos[i].kind === 'video') {
-						  console.log(sourceInfos[i]);
-						  videoSources.push(sourceInfos[i]);
+					MediaStreamTrack.getSources(function(sourceInfos) {
+						for (var i = 0; i < sourceInfos.length; i++) {
+							if (sourceInfos[i].kind === 'video') {
+							  console.log(sourceInfos[i]);
+							  videoSources.push(sourceInfos[i]);
 						  
-						  if (sourceInfos[i].facing == "environment") {
-							sourceId = sourceInfos[i].id;
-							mediaConstraints.video.optional = [];
-							mediaConstraints.video.optional[0] = {};
-							mediaConstraints.video.optional[0].sourceId = sourceId;
-							break;
-						  }	
-						}
-					}			
-		
-					navigator.getUserMedia(mediaConstraints, function(stream) {
-				
-						my_stream = stream;
-						var videoElement = document.getElementById('myvideo');
-						videoElement.src = window.URL.createObjectURL(stream) || stream;
-						videoElement.onloadedmetadata = function(e) {
-							//console.log(e);
-							///videoElement.width = e.target.videoWidth;
-							//videoElement.height = e.target.videoHeight;
-						};					
-						videoElement.play();
-						videoElement.volume = 0;
-						
-						initRecorder();
-
-						peer = new Peer(peerjsoptions);
-
-						peer.on('open', function(id) {
-							peer_id = id;
-							console.log("peer id: " + peer_id);
-					
-							if (socket != null) {						  
-								socket.emit('peerid', peer_id);
+							  if (sourceInfos[i].facing == "environment") {
+								sourceId = sourceInfos[i].id;
+								mediaConstraints.video.optional = [];
+								mediaConstraints.video.optional[0] = {};
+								mediaConstraints.video.optional[0].sourceId = sourceId;
+								break;
+							  }	
 							}
-						});		
+						}			
+		
+						navigator.getUserMedia(mediaConstraints, function(stream) {
 				
-						peer.on('error', function(error) {
-							console.log(error);
-						});
+							my_stream = stream;
+							var videoElement = document.getElementById('myvideo');
+							videoElement.src = window.URL.createObjectURL(stream) || stream;
+							videoElement.onloadedmetadata = function(e) {
+								//console.log(e);
+								///videoElement.width = e.target.videoWidth;
+								//videoElement.height = e.target.videoHeight;
+							};					
+							videoElement.play();
+							videoElement.volume = 0;
+						
+							//initRecorder();
 
-						peer.on('call', function(incoming_call) {
-							console.log("Got a call!");
-							incoming_call.answer(my_stream); 
-							console.log("Answered with");
-							console.log(my_stream);
-							incoming_call.on('stream', function(remoteStream) { 
-								var ovideoElement = document.getElementById('othervideo');
-								ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-								ovideoElement.onloadedmetadata = function(e) {
-									//ovideoElement.width = e.target.videoWidth;
-									//ovideoElement.height = e.target.videoHeight;
-								};
-								ovideoElement.play();
+							peer = new Peer(peerjsoptions);
+
+							peer.on('open', function(id) {
+								peer_id = id;
+								console.log("peer id: " + peer_id);
+					
+								if (socket != null) {						  
+									socket.emit('peerid', peer_id);
+								}
+							});		
+				
+							peer.on('error', function(error) {
+								console.log(error);
 							});
+
+							peer.on('call', function(incoming_call) {
+								console.log("Got a call!");
+								incoming_call.answer(my_stream); 
+								console.log("Answered with");
+								console.log(my_stream);
+								incoming_call.on('stream', function(remoteStream) { 
+									var ovideoElement = document.getElementById('othervideo');
+									ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
+									ovideoElement.onloadedmetadata = function(e) {
+										//ovideoElement.width = e.target.videoWidth;
+										//ovideoElement.height = e.target.videoHeight;
+									};
+									ovideoElement.play();
+								});
 					
-							incoming_call.on('close', function() {
-								var ovideoElement = document.getElementById('othervideo');
-								ovideoElement.src = null;
-							});
+								incoming_call.on('close', function() {
+									var ovideoElement = document.getElementById('othervideo');
+									ovideoElement.src = null;
+								});
 					
-							incoming_call.on('error', function(err) {
-								console.log(err);
-								var ovideoElement = document.getElementById('othervideo');
-								ovideoElement.src = null;	
-							}); //incoming_call.on('error
+								incoming_call.on('error', function(err) {
+									console.log(err);
+									var ovideoElement = document.getElementById('othervideo');
+									ovideoElement.src = null;	
+								}); //incoming_call.on('error
 					
-						}); //peer.on('call')
-					},
-					function (err) {
-					  console.log(err);
-					  console.log(err.message);
-					});	// getusermedia			
-				}); // Sources
-			}// if (getusermedia)
+							}); //peer.on('call')
+						},
+						function (err) {
+						  console.log(err);
+						  console.log(err.message);
+						});	// getusermedia			
+					}); // Sources
+				}// if (getusermedia)
+			}
 			
 			function makeCall(peeridtocall) {
 				var call = peer.call(peeridtocall, my_stream);
@@ -483,6 +485,7 @@
 		</script>
 	</head>
 	<body>
+
 		<div class="container" id="fullvideo_container">
 			<div class="row" id="fullvideo_row">
 				<div id="fullvideo_div" class="columns twelve">
