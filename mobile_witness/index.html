@@ -33,7 +33,7 @@
 			
 			#messages {
 				height: 120px;
-				overflow: hidden;
+				overflow: scroll;
 			}
 			
 			#smallvideo_div {
@@ -59,6 +59,10 @@
 			    margin: 5px 5px 5px 5px;			
 			}
 			
+			button:active {
+				border: 3px solid white;
+			}
+			
 			#okbutton {
 				background-color: white;
 			}
@@ -79,7 +83,8 @@
 			const socketserver = "https://liveweb.itp.io:443/";
 
 			var mediaConstraints = { audio: true, video: { mandatory: { maxWidth: 720 } } };
-
+			//{ width: 640, height: 480, facingMode: "environment" }
+				
 			var socket = null;
 			var peer = null;
 			var my_stream = null;
@@ -93,15 +98,9 @@
 								secure: true
 								};
 
-// 			var peerjsoptions = {
-// 								host: peerserver, 
-// 								port: peerserverport, 
-// 								path: '/', 
-// 								secure: true,
 // 								'iceServers': [
 // 									'stun:liveweb.itp.io:3478'
 // 								]
-// 								};
 
 
 			function sendPanic() {
@@ -113,7 +112,22 @@
 			function sendMessage(message) {
 				if (socket != null) {
 					socket.emit('chatmessage', message);
+					insertMessage(message + ": You", "right");
 				}
+			}
+			
+			function insertMessage(message, alignment) {
+				var newmessage = document.createElement("div");
+				newmessage.className = "message";
+				newmessage.innerHTML = data;
+				newmessage.style.textAlign = alignment;
+			
+				var messages = document.getElementById("messages");
+				if (messages.children.length > 0) {
+					messages.insertBefore(newmessage, messages.children[0]);
+				} else {
+					messages.appendChild(newmessage);
+				}			
 			}
 					
 			document.addEventListener('DOMContentLoaded', function() {
@@ -156,40 +170,21 @@
 				});
 
 				socket.on('chatmessage', function (data) {
-					var newmessage = document.createElement("div");
-					newmessage.className = "message";
-					newmessage.innerHTML = data;
-				
-					var messages = document.getElementById("messages");
-					if (messages.children.length > 0) {
-						messages.insertBefore(newmessage, messages.children[0]);
-					} else {
-						messages.appendChild(newmessage);
-					}
-					//document.getElementById("messages").innerHTML = data + "<br />\n" + document.getElementById("messages").innerHTML;
+					insertMessage("Remote: " + data, "left");
 				});
 
 				socket.on('peerid', function(data) {
 					console.log("receiving peerid " + data);
 					makeCall(data);
 				});
+				
+				socket.on('tag', function(data) {
+					addTag();
+				});
 
 				/* Get User Media */
 				window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 				navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-				
-				//var mediaConstraints = { audio: false, video: { width: 640, height: 480, optional: [{sourceId: "835acea08d27ea4ae22fbe97aaf8fb554e4cb0b7d106a77e9407cd87ed1175a6"}] }};
-				//var mediaConstraints = {audio: true, video: {width: 640, height: 480}};
-				//var mediaConstraints = {audio: true, video: true};
-// 				var mediaConstraints = new Object();
-// 				mediaConstraints.audio = true;
-// 				mediaConstraints.video = new Object();
-// 				mediaConstraints.video.width = 720;
-// //				mediaConstraints.video.height = 480;
-
-					//{ width: 640, height: 480, facingMode: "environment" }
-				
-				
 				
 				if (navigator.getUserMedia) {
 					console.log("getUserMedia is true");
@@ -212,8 +207,6 @@
 							}
 						}			
 			
-						//navigator.getUserMedia(mediaConstraints, function(stream) {}, function(err) {});
-
 						navigator.getUserMedia(mediaConstraints, function(stream) {
 					
 							my_stream = stream;
@@ -227,7 +220,7 @@
 							videoElement.play();
 							videoElement.volume = 0;
 							
-							
+							initRecorder();
 
 							peer = new Peer(peerjsoptions);
 
@@ -236,7 +229,7 @@
 								console.log("peer id: " + peer_id);
 						
 								if (socket != null) {						  
-								  socket.emit('peerid', peer_id);
+									socket.emit('peerid', peer_id);
 								}
 							});		
 					
@@ -257,35 +250,17 @@
 										//ovideoElement.height = e.target.videoHeight;
 									};
 									ovideoElement.play();
-									//ovideoElement.volume = 0;
-
-									//var ovideoElement = document.createElement('video');
-									//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-									//ovideoElement.setAttribute("autoplay", "true");	
-									//ovideoElement.setAttribute("id", incoming_call.peer);
-									//ovideoElement.setAttribute("controls", "controls");	
-									//ovideoElement.play();
-									////document.body.appendChild(ovideoElement);
-									//document.getElementById('othervideo').appendChild(ovideoElement);
 								});
 						
 								incoming_call.on('close', function() {
 									var ovideoElement = document.getElementById('othervideo');
 									ovideoElement.src = null;
-						
-									//var ovideoElement = document.getElementById(incoming_call.peer);
-									//ovideoElement.parentElement.removeChild(ovideoElement);
 								});
 						
 								incoming_call.on('error', function(err) {
 									console.log(err);
 									var ovideoElement = document.getElementById('othervideo');
 									ovideoElement.src = null;	
-							
-									//var ovideoElement = document.getElementById(incoming_call.peer);
-									//if (ovideoElement != null) {
-									//	ovideoElement.parentElement.removeChild(ovideoElement);
-									//}
 								}); //incoming_call.on('error
 						
 							}); //peer.on('call')
@@ -307,36 +282,97 @@
 							//ovideoElement.height = e.target.videoHeight;
 						};
 						ovideoElement.play();
-						//ovideoElement.volume = 0;
-
-						//var ovideoElement = document.createElement('video');
-						//ovideoElement.src = window.URL.createObjectURL(remoteStream) || remoteStream;
-						//ovideoElement.setAttribute("autoplay", "true");	
-						//ovideoElement.setAttribute("id", call.peer);	
-						//ovideoElement.play();
-						////document.body.appendChild(ovideoElement);					
-						//document.getElementById('othervideo').appendChild(ovideoElement);
 					});	
 						
 					call.on('close', function() {
 						var ovideoElement = document.getElementById('othervideo');
 						ovideoElement.src = null;
-
-						//var ovideoElement = document.getElementById(call.peer);
-						//ovideoElement.parentElement.removeChild(ovideoElement);
 					});
 				
 					call.on('error', function(err) {
 						var ovideoElement = document.getElementById('othervideo');
 						ovideoElement.src = null;
-
-						//var ovideoElement = document.getElementById(call.peer);
-						//if (ovideoElement != null) {
-						//	ovideoElement.parentElement.removeChild(ovideoElement);
-						//}
 					});						
 				}
 
+				// Media Recording functionality
+				window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
+				
+				var videoChunks = [];
+				var mediaRecorder = null;
+				var recordingTimeout = null;
+				function initRecorder() {
+					mediaRecorder = new MediaRecorder(my_stream);   
+				 
+					mediaRecorder.onstop = function(e) {
+					
+						clearTimeout(recordingTimeout);
+						
+						// Turn all of the chunks into a single blob
+						var blob = new Blob(videoChunks, { 'type' : 'video/webm' });
+					
+						// Reset videoChunks
+						videoChunks.length = 0;
+
+						window.requestFileSystem(window.PERSISTENT, 10 * 1024 * 1024, function(fs) {
+							fs.root.getFile(Date.now() + '.webm', {create: true, exclusive: true}, 
+								function(fileEntry) {
+									fileEntry.createWriter(function(fileWriter) {
+
+										  fileWriter.onwriteend = function(e) {
+											console.log('Write completed.');
+										  };
+
+										  fileWriter.onerror = function(e) {
+											console.log('Write failed: ' + e.toString());
+										  };
+
+										  fileWriter.write(blob);
+
+									}, function(err) {
+										console.log(err);
+									});									
+							}, function(err) {
+								console.log(err);
+							});
+						}, function(err) {
+							console.log(err);
+						});
+					};
+
+					mediaRecorder.ondataavailable = function(e) {
+						videoChunks.push(e.data);
+					};
+
+					function startRecorder() {
+						mediaRecorder.start();
+						recordingTimeout = setTimeout(function() {
+							mediaRecorder.stop();
+							initRecorder();
+						}, videoSegmentLength);
+					}
+
+					startRecorder();
+				}	
+				
+				// Tagging functionality
+				function initTagging() {
+					var myVideo = document.getElementById('myvideo');
+					myVideo.addEventListener('click', function() {
+						addTag();
+					});
+				}
+				
+				function addTag() {
+					socket.emit('tag', {});
+					var tag = {tag: 'tag', location: '', video: '', who: 'mobile', videoTimestamp: '', timestamp: Date.now()};
+					console.log(tag);
+					// Write to file
+				}
+				
+				window.addEventListener('load', initTagging);				
+
+				// GeoLocation
 				if (navigator.geolocation) 
 				{
 					navigator.geolocation.watchPosition(successCallback, errorCallback, {});
@@ -370,18 +406,14 @@
 		<div class="container" id="smallvideo_container">
 			<div class="row" id="smallvideo_row">
 				<div id="messages" class="columns seven">
-					<div class="message">Last message from a distant witness </div>
-					<div class="message">Long message from a distant witness which should have a line break or something of the sort depending on the screen size </div>
-					<div class="message">First message from a distant witness </div>
 				</div>
 				<div id="panel" class="columns two">
 					<button id="okbutton" onclick="sendMessage('Ok');">OK</button>
+					<button id="anotherbutton" onclick="sendMessage('Something');">Another</button>
 					<button id="helpbutton" onclick="sendPanic();">HELP</button>				
 				</div>
 				<div id="smallvideo_div" class="columns three">
-					<video id="othervideo" width="160" height="120" autoplay>
-						<!-- Could put a default source -->
-					</video>
+					<video id="othervideo" width="160" height="120" autoplay></video>
 				</div>
 			</div>
 		</div>
