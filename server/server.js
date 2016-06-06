@@ -7,6 +7,34 @@
 	var fs = require('fs'); // Using the filesystem module
 	var url = require('url');
 
+	// Send SMS Functionality
+// 	var twilio = require('twilio');
+// 	var request = require('request');
+// 	var phonenumbers = ['+12125551212', '+17185551212']; 
+// 	var twillio_client = new twilio.RestClient('', '');
+//	var twilioNumber = '+17187178830';
+
+// 	function sendSMS(message) {
+// 		for (var i = 0; i < phonenumbers.length; i++) {
+// 			twillio_client.sms.messages.create({
+// 				to: phonenumbers[i],
+// 				from: twilioNumber,
+// 				body: message
+// 			}, function(error, message) {
+// 				if (!error) {
+// 					console.log('Success! The SID for this SMS message is:');
+// 					console.log(message.sid);
+//  
+// 					console.log('Message sent on:');
+// 					console.log(message.dateCreated);
+// 				} else {
+// 					console.log('Oops! There was an error.');
+// 				console.log(error);
+// 				}
+// 			});
+// 		}
+// 	}
+
 	var options = {
 	  key: fs.readFileSync('my-key.pem'),
 	  cert: fs.readFileSync('my-cert.pem')
@@ -142,11 +170,8 @@
 		
 			// User sends username
 			socket.on('username', function(data) {
-			
 				log(socket, 'username', data);
-			
-				socket.username = data;
-			
+				socket.username = data;			
 			});
 		
 		
