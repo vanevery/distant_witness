@@ -225,7 +225,7 @@
 					messages.appendChild(newmessage);
 				}			
 		
-				socket.emit('chatmessage', message);
+				//socket.emit('chatmessage', message);
 			};
 			
 			// Mark video functionality
@@ -291,8 +291,8 @@
 				});
 			}
 			
-			function addTag(tag) {
-				var tagJson = {tag: tag, location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
+			function addTag(thetag) {
+				var tagJson = {tag: thetag, location: currentLocation, video: currentVideoFileName, videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
 				//socket.emit('tag', tagJson);
 				addTagJson(tagJson);
 			}
