@@ -113,17 +113,23 @@
 // 								]
 
 
+
 			function sendPanic() {
+				var tagJson = {tag: 'panic', location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
 				if (socket != null) {
-					socket.emit('panic',"");
+					socket.emit('panic',tagJson);
+					insertMessage("Panic :You", "right");					
 				}
+				addTagJson(tagJson);
 			}
 			
 			function sendMessage(message) {
+				var tagJson = {tag: 'message', message: message, location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
 				if (socket != null) {
-					socket.emit('chatmessage', message);
+					socket.emit('message',tagJson);
 					insertMessage(message + ": You", "right");
 				}
+				addTagJson(tagJson);
 			}
 			
 			function insertMessage(message, alignment) {
@@ -186,11 +192,11 @@
 			});
 			
 			socket.on('tag', function(data) {
-				addTag();
+				addTag(data);
 			});
 
 			/* Get User Media */
-			function initWebrtc() {
+			//function initWebrtc() {
 				window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 				navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 			
@@ -279,7 +285,7 @@
 						});	// getusermedia			
 					}); // Sources
 				}// if (getusermedia)
-			}
+			//}
 			
 			function makeCall(peeridtocall) {
 				var call = peer.call(peeridtocall, my_stream);
@@ -338,10 +344,12 @@
 
 										  fileWriter.onwriteend = function(e) {
 											console.log('Write completed.');
+											// Close file
 										  };
 
 										  fileWriter.onerror = function(e) {
 											console.log('Write failed: ' + e.toString());
+											// Close file
 										  };
 
 										  fileWriter.write(blob);
@@ -373,7 +381,7 @@
 					}, videoSegmentLength);
 				}
 
-				startRecorder();
+				//startRecorder();
 			}	
 			
 			// Media File Management
@@ -421,14 +429,18 @@
 			function initTagging() {
 				var myVideo = document.getElementById('myvideo');
 				myVideo.addEventListener('click', function() {
-					addTag();
+					addTag("click");
 				});
 			}
 			
-			function addTag() {
-				socket.emit('tag', {});
-				var tag = {tag: 'tag', location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
-				console.log(tag);
+			function addTag(tag) {
+				var tagJson = {tag: tag, location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
+				socket.emit('tag', tagJson);
+				addTagJson(tagJson);
+			}
+			
+			function addTagJson(tagJson) {
+				console.log(tagJson);
 				
 				// Write to file
 				// Reorganize filesystem request code
@@ -436,18 +448,14 @@
 					fs.root.getFile(tagsFilename, {create: true, exclusive: true}, 
 						function(fileEntry) {
 							fileEntry.createWriter(function(fileWriter) {
-
 								  fileWriter.onwriteend = function(e) {
 									console.log('Write completed.');
 								  };
-
 								  fileWriter.onerror = function(e) {
 									console.log('Write failed: ' + e.toString());
 								  };
-
 								  // Can do append???
-								  fileWriter.append(tag);
-
+								  //fileWriter.append(tagJson);
 							}, function(err) { //createWriter
 								console.log(err);
 							});									
@@ -492,11 +500,13 @@
 					<video id="myvideo" muted autoplay></video>
 				</div>
 			</div>
+<!-- 
 			<div class="row" id="filelist_row">
 				<div id="filelist" class="columns three">
 					<button id="filesbutton" onclick="listFiles();">List Saved Videos</button>
 				</div>
 			</div>			
+ -->
 		</div>
 		<div class="container" id="smallvideo_container">
 			<div class="row" id="smallvideo_row">

@@ -13,7 +13,7 @@
 			
 			const httpsport = 443;
 			const peerserverport = 10000;
-			const videoSegmentLength = 3000; // 3 seconds
+			const videoSegmentLength = 30000; // 3 seconds
 			const recordingLocation = "/Users/vanevery/Desktop/";
 			
 			var fs = require('fs');
@@ -83,7 +83,7 @@
 				});
 				
 				socket.on('tag', function(data) {
-					addTag();
+					addTag(data);
 				});
 						
 				function sendModeratedMessage(message) {
@@ -108,6 +108,8 @@
 						var videoElement = document.getElementById('myvideo');
 						videoElement.src = window.URL.createObjectURL(stream) || stream;
 						videoElement.play();
+						
+						muteStream();
 	
 						peer = new Peer(peerjsoptions);
 
@@ -162,7 +164,7 @@
 
 				function makeCall(peeridtocall) {
 					console.log("makeCall: " + peeridtocall);
-					var call = peer.call(peeridtocall,my_stream);
+					var call = peer.call(peeridtocall, my_stream);
 					
 					call.on('stream', function(_remoteStream) {  
 						console.log("makeCall: call.on stream");
@@ -192,6 +194,11 @@
 						if (mediaRecorder != null && mediaRecorder.state == "recording") {
 							mediaRecorder.stop();
 						}
+						
+						// Try the other way
+						if (socket != null) {						  
+					 		socket.emit('peerid', peer_id);
+						}						
 					});						
 				}
 			}
@@ -215,7 +222,7 @@
 			};
 			
 			// Mark video functionality
-			
+			// See addTag and addTagJson
 			
 			// Media Recording functionality
 			var videoChunks = [];
@@ -223,6 +230,7 @@
 			var remoteStream = null;
 			var recordingTimeout = null;
 			var currentVideoFileName = null;
+			var currentVideoStartTime = 0;
 			function initRecorder() {
 				currentVideoFileName = Date.now() + ".webm";
 				
@@ -243,6 +251,7 @@
 					reader.addEventListener('loadend', function(e) {
 						// Create the videoBuffer and write to file
 						var videoBuffer = new Buffer(reader.result);
+						
 						fs.writeFile(recordingLocation + currentVideoFileName, videoBuffer,  function(err){
 							if (err) console.log(err);
 							console.log("It's saved!")
@@ -257,6 +266,7 @@
 
 				function startRecorder() {
 	    			mediaRecorder.start();
+	    			currentVideoStartTime = Date.now();
 					recordingTimeout = setTimeout(function() {
 						mediaRecorder.stop();
 						initRecorder();
@@ -270,22 +280,28 @@
 			function initTagging() {
 				var myVideo = document.getElementById('othervideo');
 				myVideo.addEventListener('click', function() {
-					addTag();
+					addTag("click");
 				});
 			}
 			
-			function addTag() {
-				socket.emit('tag', {});
-				var tag = {tag: 'tag', location: '', video: '', who: 'mobile', videoTimestamp: '', timestamp: Date.now()};
-
-				fs.appendFile(recordingLocation + currentVideoFileName + '.json', JSON.stringify(tag),  function(err){
+			function addTag(tag) {
+				var tagJson = {tag: tag, location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
+				//socket.emit('tag', tagJson);
+				addTagJson(tagJson);
+			}
+			
+			function addTagJson(tagJson) {
+				console.log(tagJson);
+			
+				fs.appendFile(recordingLocation + currentVideoFileName + '.json', JSON.stringify(tagJson) + "\n",  function(err){
 					if (err) { 
 						console.log(err); 
 					} else {
 						console.log("tag saved!");
 					}
 				});				
-			}
+			}			
+			
 			
 			window.addEventListener('load', initTagging);			
 

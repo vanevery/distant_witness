@@ -17,6 +17,7 @@
   "xwalk_android_permissions": [
     "CAMERA",
     "MODIFY_AUDIO_SETTINGS",
-    "RECORD_AUDIO"
+    "RECORD_AUDIO",
+    "ACCESS_FINE_LOCATION"
   ]   
 }
