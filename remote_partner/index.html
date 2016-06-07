@@ -212,6 +212,7 @@
 
 			// Send Message
 			function sendmessage(message) {
+				addTag(message);
 
 				var newmessage = document.createElement("div");
 				newmessage.className = "message mymessage";
