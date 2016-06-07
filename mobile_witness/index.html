@@ -126,7 +126,8 @@
 			function sendMessage(message) {
 				var tagJson = {tag: 'message', message: message, location: currentLocation, video: currentVideoFileName, who: 'mobile', videoTimestamp: Date.now() - currentVideoStartTime, timestamp: Date.now()};
 				if (socket != null) {
-					socket.emit('message',tagJson);
+					//socket.emit('message',tagJson);
+					socket.emit('chatmessage',message);
 					insertMessage(message + ": You", "right");
 				}
 				addTagJson(tagJson);

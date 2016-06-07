@@ -55,6 +55,9 @@
 				});
 
 				socket.on('chatmessage', function (data) {
+					console.log(data);
+					addTag(data);
+					
 					var newmessage = document.createElement("div");
 					newmessage.className = "message remotemessage";
 					newmessage.innerHTML = '<span style="color: rgb(200,200,200);">Mobile:</span> ' + data;
@@ -74,11 +77,14 @@
 			
 				socket.on('location', function(data) {
 					console.log("socket on location");
+
 					addMoveMarker(socket.id, data.lat, data.lng);
 					currentLocation = {lat: data.lat, lng: data.lng, date: Date.now()};
+					addTag('location');
 				});
 				
 				socket.on('panic', function(data) {
+					addTag(data);
 					document.body.style.backgroundColor = "red";
 				});
 				
