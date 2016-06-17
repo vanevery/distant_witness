@@ -11,12 +11,21 @@
 			const httpsserver = "liveweb.itp.io";
 			const peerserver = "liveweb.itp.io";
 			
-			const httpsport = 443;
+			//const httpsport = 443;
+			const httpsport = 9443;
 			const peerserverport = 10000;
 			const videoSegmentLength = 30000; // 3 seconds
-			const recordingLocation = "/Users/vanevery/Desktop/";
 			
+			var os = require('os');
 			var fs = require('fs');
+
+			const recordingLocation = os.homedir() + "/distant_witness/";
+			
+			try {
+				fs.mkdirSync(recordingLocation);
+			} catch (e) {
+				if (e.code != 'EEXIST') throw e
+			}	
 
 			var my_stream = null;
 			var peer_id = null;
