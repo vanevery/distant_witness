@@ -1,9 +1,9 @@
 	// Small Group
-// 	var phonenumbers = ['+17188096659', '+17185551212']; 
 
 	// HTTP Portion
-	const httpport = 80;
-	const httpsport = 443;
+	const httpport = 9080;
+	const httpsport = 9443;
+	const peerserverport = 10001;
 	
 	var http = require('http');
 	var https = require('https');
@@ -279,7 +279,7 @@ var fs = require('fs');
 var PeerServer = require('peer').PeerServer;
 
 var server = PeerServer({
-  port: 10000,
+  port: peerserverport,
   ssl: {
     key: fs.readFileSync('my-key.pem'),
     cert: fs.readFileSync('my-cert.pem')
