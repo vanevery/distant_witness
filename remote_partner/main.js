@@ -68,8 +68,8 @@ app.on('activate', function () {
 	var url = require('url');
 
 	var options = {
-	  key: fs.readFileSync('my-key.pem'),
-	  cert: fs.readFileSync('my-cert.pem')
+	  key: fs.readFileSync(__dirname + "/my-key.pem"),
+	  cert: fs.readFileSync(__dirname + "/my-cert.pem")
 	};
 
 	var httpsServer = https.createServer(options, requestHandler);
