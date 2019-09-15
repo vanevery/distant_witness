@@ -1,4 +1,4 @@
-# distant_witness
+# Distant Witness
 
 Distant Witness is an open source platform in development which connects an individual mobile user (witness) with a remote partner (distant witness) via real-time video.
 
